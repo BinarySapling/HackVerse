@@ -1,0 +1,15 @@
+/**
+ * @desc Catalog of standardized application error codes
+ */
+const ErrorCodes = {
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  UNAUTHORIZED: "UNAUTHORIZED",
+  FORBIDDEN: "FORBIDDEN",
+  NOT_FOUND: "NOT_FOUND",
+  CONFLICT: "CONFLICT",
+  DATABASE_ERROR: "DATABASE_ERROR",
+  TOO_MANY_REQUESTS: "TOO_MANY_REQUESTS",
+  INTERNAL_ERROR: "INTERNAL_ERROR"
+};
+
+export default ErrorCodes;
