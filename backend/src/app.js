@@ -9,6 +9,7 @@ import config from './config/env.js';
 import logger from './config/logger.js';
 import requestIdMiddleware from './middleware/requestIdMiddleware.js';
 import healthRoutes from './routes/healthRoutes.js';
+import authRoutes from './routes/auth.routes.js';
 import { notFound } from './middleware/notFoundMiddleware.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 const app = express();
@@ -46,6 +47,7 @@ app.use(cookieParser());
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use('/health', healthRoutes);
+app.use('/api/v1/auth', authRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
