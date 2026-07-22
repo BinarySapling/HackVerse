@@ -10,6 +10,8 @@ import logger from './config/logger.js';
 import requestIdMiddleware from './middleware/requestIdMiddleware.js';
 import healthRoutes from './routes/healthRoutes.js';
 import authRoutes from './routes/auth.routes.js';
+import hackathonRoutes from './routes/hackathon.routes.js';
+import registrationRoutes from './routes/registration.routes.js';
 import { notFound } from './middleware/notFoundMiddleware.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 const app = express();
@@ -48,6 +50,8 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use('/health', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/hackathons', hackathonRoutes);
+app.use('/api/v1', registrationRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
