@@ -1,0 +1,187 @@
+import registrationRepository from '../repositories/registration.repository.js';
+import hackathonRepository from '../repositories/hackathon.repository.js';
+import AppError from '../errors/AppError.js';
+import HttpStatus from '../constants/httpStatus.js';
+import ErrorCodes from '../errors/ErrorCodes.js';
+import logger from '../config/logger.js';
+import Roles from '../constants/roles.js';
+import authRepository from '../repositories/auth.repository.js';
+import emailService from './email.service.js';
+
+/**
+ * @desc Register a participant for a hackathon
+ * @param {string} userId - Object ID of the participant
+ * @param {string} userRole - Role of the registering user
+ * @param {string} hackathonId - Object ID of the hackathon
+ * @returns {Promise<Object>} The registration document
+ */
+export const registerForHackathon = async (userId, userRole, hackathonId) => {
+  // 1. Enforce participant-only registration rule
+  if (userRole !== Roles.PARTICIPANT) {
+    logger.warn(`Registration attempt rejected: User "${userId}" with role "${userRole}" tried to register for hackathon "${hackathonId}"`);
+    throw new AppError(
+      "Only participants can register for hackathons",
+      HttpStatus.FORBIDDEN,
+      ErrorCodes.FORBIDDEN
+    );
+  }
+
+  // 2. Fetch and check target hackathon
+  const hackathon = await hackathonRepository.findById(hackathonId);
+  if (!hackathon || hackathon.isDeleted) {
+    throw new AppError(
+      "Hackathon not found",
+      HttpStatus.NOT_FOUND,
+      ErrorCodes.NOT_FOUND
+    );
+  }
+
+  // 3. Enforce registration window limits
+  const now = new Date();
+  const registrationStart = new Date(hackathon.registrationStart);
+  const registrationEnd = new Date(hackathon.registrationEnd);
+
+  if (now < registrationStart) {
+    throw new AppError(
+      "Registration has not started yet",
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+  if (now > registrationEnd) {
+    throw new AppError(
+      "Registration is closed for this hackathon",
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
+  // 4. Handle duplicates and potential re-registrations
+  const existingRegistration = await registrationRepository.findByUserAndHackathon(userId, hackathonId);
+  if (existingRegistration) {
+    if (existingRegistration.status === 'registered') {
+      throw new AppError(
+        "You are already registered for this hackathon",
+        HttpStatus.CONFLICT,
+        ErrorCodes.CONFLICT
+      );
+    }
+
+    // Reactivate previously cancelled registration document
+    if (existingRegistration.status === 'cancelled') {
+      existingRegistration.status = 'registered';
+      existingRegistration.registrationDate = new Date();
+      await existingRegistration.save();
+      logger.info(`Re-activated registration [ID: ${existingRegistration._id}] for user: ${userId}`);
+
+      try {
+        const participant = await authRepository.findUserById(userId);
+        await emailService.sendParticipantConfirmation({
+          participant,
+          hackathon
+        });
+      } catch (error) {
+        logger.error('Participant confirmation email failed after successful registration reactivation', {
+          type: 'participant_registration_confirmation',
+          recipient: userId,
+          timestamp: new Date().toISOString(),
+          reason: error.message
+        });
+      }
+
+      return { registration: existingRegistration, isReactivated: true };
+    }
+  }
+
+  // 5. Create new registration record
+  const registration = await registrationRepository.create({
+    user: userId,
+    hackathon: hackathonId,
+    status: 'registered'
+  });
+
+  logger.info(`User "${userId}" registered for hackathon "${hackathonId}" successfully. Registration ID: "${registration._id}"`);
+
+  try {
+    const participant = await authRepository.findUserById(userId);
+    await emailService.sendParticipantConfirmation({
+      participant,
+      hackathon
+    });
+  } catch (error) {
+    logger.error('Participant confirmation email failed after successful registration', {
+      type: 'participant_registration_confirmation',
+      recipient: userId,
+      timestamp: new Date().toISOString(),
+      reason: error.message
+    });
+  }
+
+  return { registration, isReactivated: false };
+};
+
+/**
+ * @desc Retrieve paginated registrations matching the logged-in participant
+ * @param {string} userId - Object ID of the participant
+ * @param {Object} query - Query parameters for pagination
+ * @returns {Promise<Object>} Object containing registrations array and pagination metadata
+ */
+export const getMyRegistrations = async (userId, query) => {
+  const page = parseInt(query.page, 10) || 1;
+  const limit = parseInt(query.limit, 10) || 10;
+  const skip = (page - 1) * limit;
+
+  const registrations = await registrationRepository.findMyRegistrations(userId, skip, limit);
+  const total = await registrationRepository.countMyRegistrations(userId);
+
+  return {
+    registrations,
+    pagination: {
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit)
+    }
+  };
+};
+
+/**
+ * @desc Cancel a participant's registration (soft status switch for auditing/metrics logs)
+ * @param {string} registrationId - Object ID of the registration document
+ * @param {string} userId - Object ID of the requesting user
+ * @returns {Promise<Object>} The updated registration document
+ */
+export const cancelRegistration = async (registrationId, userId) => {
+  // 1. Fetch registration
+  const registration = await registrationRepository.findById(registrationId);
+  if (!registration || registration.isDeleted) {
+    throw new AppError(
+      "Registration not found",
+      HttpStatus.NOT_FOUND,
+      ErrorCodes.NOT_FOUND
+    );
+  }
+
+  // 2. Validate ownership (only the registered user can cancel)
+  const registrationUserId = registration.user._id || registration.user;
+  if (registrationUserId.toString() !== userId.toString()) {
+    logger.warn(`Unauthorized cancel attempt on registration "${registrationId}" by user "${userId}"`);
+    throw new AppError(
+      "Access denied: You do not own this registration",
+      HttpStatus.FORBIDDEN,
+      ErrorCodes.FORBIDDEN
+    );
+  }
+
+  // 3. Mark status as cancelled
+  const updatedRegistration = await registrationRepository.updateStatus(registrationId, 'cancelled');
+
+  logger.info(`Registration "${registrationId}" cancelled successfully by owner "${userId}"`);
+  return updatedRegistration;
+};
+
+export default {
+  registerForHackathon,
+  getMyRegistrations,
+  cancelRegistration
+};
