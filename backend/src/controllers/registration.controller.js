@@ -1,0 +1,67 @@
+import registrationService from '../services/registration.service.js';
+import ApiResponse from '../utils/ApiResponse.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import HttpStatus from '../constants/httpStatus.js';
+
+/**
+ * @desc Handle HTTP POST register participant for a hackathon
+ * @route POST /api/v1/hackathons/:hackathonId/register
+ * @access Protected (Participant only)
+ */
+export const registerForHackathon = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const userRole = req.user.role;
+  const { hackathonId } = req.params;
+
+  const { registration, isReactivated } = await registrationService.registerForHackathon(userId, userRole, hackathonId);
+
+  return ApiResponse.success(
+    res,
+    isReactivated ? HttpStatus.OK : HttpStatus.CREATED,
+    "Registered for hackathon successfully",
+    registration
+  );
+});
+
+/**
+ * @desc Handle HTTP GET fetch active registrations of logged-in user
+ * @route GET /api/v1/registrations/me
+ * @access Protected (Participant only)
+ */
+export const getMyRegistrations = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const result = await registrationService.getMyRegistrations(userId, req.query);
+
+  return ApiResponse.success(
+    res,
+    HttpStatus.OK,
+    "My registrations retrieved successfully",
+    result.registrations,
+    result.pagination
+  );
+});
+
+/**
+ * @desc Handle HTTP PATCH cancel registration
+ * @route PATCH /api/v1/registrations/:id/cancel
+ * @access Protected (Owner only)
+ */
+export const cancelRegistration = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  const registration = await registrationService.cancelRegistration(id, userId);
+
+  return ApiResponse.success(
+    res,
+    HttpStatus.OK,
+    "Registration cancelled successfully",
+    registration
+  );
+});
+
+export default {
+  registerForHackathon,
+  getMyRegistrations,
+  cancelRegistration
+};
