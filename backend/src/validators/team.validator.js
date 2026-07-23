@@ -1,0 +1,80 @@
+import { z } from 'zod';
+import mongoose from 'mongoose';
+import AppError from '../errors/AppError.js';
+import HttpStatus from '../constants/httpStatus.js';
+import ErrorCodes from '../errors/ErrorCodes.js';
+
+/**
+ * @desc Zod validation schema for creating a new team
+ */
+export const createTeamSchema = z.object({
+  name: z
+    .string({ required_error: "Team name is required" })
+    .trim()
+    .min(3, "Team name must be at least 3 characters")
+    .max(50, "Team name cannot exceed 50 characters")
+});
+
+/**
+ * @desc Zod validation schema for adding a member
+ */
+export const addMemberSchema = z.object({
+  memberId: z
+    .string({ required_error: "Member ID is required" })
+    .refine((val) => mongoose.Types.ObjectId.isValid(val), {
+      message: "Invalid member ID format"
+    })
+});
+
+/**
+ * @desc Zod validation schema for removing a member
+ */
+export const removeMemberSchema = z.object({
+  memberId: z
+    .string({ required_error: "Member ID is required" })
+    .refine((val) => mongoose.Types.ObjectId.isValid(val), {
+      message: "Invalid member ID format"
+    })
+});
+
+/**
+ * @desc Express middleware validation for hackathonId path parameter
+ */
+export const validateHackathonIdParam = (req, res, next) => {
+  const { hackathonId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(hackathonId)) {
+    return next(
+      new AppError(
+        "Invalid Hackathon ID format",
+        HttpStatus.BAD_REQUEST,
+        ErrorCodes.VALIDATION_ERROR
+      )
+    );
+  }
+  next();
+};
+
+/**
+ * @desc Express middleware validation for teamId path parameter
+ */
+export const validateTeamIdParam = (req, res, next) => {
+  const { teamId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(teamId)) {
+    return next(
+      new AppError(
+        "Invalid Team ID format",
+        HttpStatus.BAD_REQUEST,
+        ErrorCodes.VALIDATION_ERROR
+      )
+    );
+  }
+  next();
+};
+
+export default {
+  createTeamSchema,
+  addMemberSchema,
+  removeMemberSchema,
+  validateHackathonIdParam,
+  validateTeamIdParam
+};
