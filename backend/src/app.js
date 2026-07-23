@@ -12,6 +12,8 @@ import healthRoutes from './routes/healthRoutes.js';
 import authRoutes from './routes/auth.routes.js';
 import hackathonRoutes from './routes/hackathon.routes.js';
 import registrationRoutes from './routes/registration.routes.js';
+import teamRoutes from './routes/team.routes.js';
+import submissionRoutes from './routes/submission.routes.js';
 import { notFound } from './middleware/notFoundMiddleware.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 const app = express();
@@ -52,6 +54,8 @@ app.use('/health', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/hackathons', hackathonRoutes);
 app.use('/api/v1', registrationRoutes);
+app.use('/api/v1', teamRoutes);
+app.use('/api/v1', submissionRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
