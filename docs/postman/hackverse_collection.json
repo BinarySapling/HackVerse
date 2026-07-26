@@ -1,0 +1,168 @@
+{
+	"info": {
+		"_postman_id": "8482a5c2-f1d2-43bb-a1a7-8e6d97c38bf6",
+		"name": "HackVerse Auth API Collection",
+		"description": "Postman collection covering the HackVerse Authentication & Session management API endpoints.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "User Registration (Signup)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john_doe_test@example.com\",\n    \"password\": \"SecurePassword123!\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/signup",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"signup"
+					]
+				},
+				"description": "Register a new participant user. The system automatically locks the role to 'participant' regardless of input parameters."
+			},
+			"response": []
+		},
+		{
+			"name": "User Authentication (Login)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"if (jsonData.success && jsonData.data && jsonData.data.accessToken) {",
+							"    pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+							"    console.log(\"Access Token successfully stored in environment.\");",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"john_doe_test@example.com\",\n    \"password\": \"SecurePassword123!\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/login",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"login"
+					]
+				},
+				"description": "Authenticate user credentials. Returns the accessToken in the JSON payload and sets the refreshToken cookie in the HTTP-only header."
+			},
+			"response": []
+		},
+		{
+			"name": "Session Token Rotation (Refresh)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"if (jsonData.success && jsonData.data && jsonData.data.accessToken) {",
+							"    pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+							"    console.log(\"Access Token successfully rotated and stored.\");",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/refresh",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"refresh"
+					]
+				},
+				"description": "Rotates refresh tokens and returns a new access token. Requires the refreshToken cookie to be sent."
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch Active Profile (Me)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{accessToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/me",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"me"
+					]
+				},
+				"description": "Retrieve the current authenticated user's profile details. Requires a valid JWT access token in the Authorization header."
+			},
+			"response": []
+		},
+		{
+			"name": "Session Termination (Logout)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/logout",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"logout"
+					]
+				},
+				"description": "Invalidates the active refresh token session in the database and clears the client's cookie."
+			},
+			"response": []
+		}
+	]
+}

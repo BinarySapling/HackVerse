@@ -1,0 +1,19 @@
+{
+	"id": "74f1d243-bb1a-7a8e-6d97-c38bf612501a",
+	"name": "HackVerse Local Environment",
+	"values": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment"
+}
