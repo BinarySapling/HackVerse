@@ -77,6 +77,38 @@ docker run -p 5000:5000 --env-file .env hackverse-backend
 
 ## Deploy
 
+## Deploy
+
+### Frontend → Vercel (already set up)
+- Connect the GitHub repo, root = `frontend`
+- Set `VITE_API_URL` to your Azure API URL + `/api/v1`
+- Every push to `production` / `main` redeploys automatically
+
+### Backend → Azure Container Apps + GitHub Actions CD
+
+1. Add GitHub repo secrets (`Settings` → `Secrets and variables` → `Actions`):
+
+| Secret | Where to get it |
+| --- | --- |
+| `ACR_USERNAME` | ACR → Access keys → Username |
+| `ACR_PASSWORD` | ACR → Access keys → Password |
+| `AZURE_CREDENTIALS` | see command below |
+
+2. Create Azure credentials (Azure Cloud Shell):
+
+```bash
+az ad sp create-for-rbac \
+  --name "hackverse-github" \
+  --role contributor \
+  --scopes /subscriptions/<YOUR_SUBSCRIPTION_ID>/resourceGroups/hackverse-rg \
+  --sdk-auth
+```
+
+Copy the full JSON output into GitHub secret `AZURE_CREDENTIALS`.
+
+3. Push to `production` (or run the workflow manually).  
+   Workflow file: `.github/workflows/deploy-backend.yml`
+
 ### Backend → Render
 
 1. New Web Service from this repo (`backend` root).
