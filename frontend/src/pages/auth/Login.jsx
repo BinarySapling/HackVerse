@@ -7,7 +7,7 @@ import { loginSchema } from '../../validations/auth';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import toast from 'react-hot-toast';
-import { Sparkles } from 'lucide-react';
+import BrandLogo from '../../components/BrandLogo';
 
 const Login = () => {
   const { login } = useAuth();
@@ -46,12 +46,7 @@ const Login = () => {
       <div className="bg-white border border-border rounded-lg shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-2 max-w-4xl w-full">
         {/* Left Side: Tagline & SVG */}
         <div className="bg-surfaceDark text-white p-8 md:p-12 flex flex-col justify-between gap-8">
-          <div className="flex items-center gap-2 text-teal-200 font-bold text-lg select-none">
-            <div className="bg-primary text-white p-1 rounded-lg">
-              <Sparkles size={16} />
-            </div>
-            <span>HackVerse</span>
-          </div>
+          <BrandLogo size="lg" />
 
           <div className="flex flex-col gap-3">
             <h2 className="text-2xl font-bold leading-tight">Elevating Hackathons to the Next Level.</h2>

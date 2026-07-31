@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import BrandLogo from './BrandLogo';
 import {
-  Sparkles,
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
@@ -23,12 +23,12 @@ const Sidebar = () => {
   const roleLinks = {
     admin: [
       { to: `/dashboard/admin`, label: 'Dashboard', icon: LayoutDashboard },
-      { to: `/hackathons`, label: 'All Hackathons', icon: Trophy },
+      { to: `/organizer/hackathons`, label: 'All Hackathons', icon: Trophy },
       { to: `/profile`, label: 'My Profile', icon: User },
     ],
     organizer: [
       { to: `/dashboard/organizer`, label: 'Dashboard', icon: LayoutDashboard },
-      { to: `/hackathons`, label: 'Hackathons', icon: Trophy },
+      { to: `/organizer/hackathons`, label: 'Hackathons', icon: Trophy },
       { to: `/profile`, label: 'My Profile', icon: User },
     ],
     participant: [
@@ -53,21 +53,15 @@ const Sidebar = () => {
     >
       <div>
         {/* Brand */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-700">
-          {!isCollapsed && (
-            <span className="flex items-center gap-2 font-bold text-base text-teal-200">
-              <Sparkles size={18} />
-              <span>HackVerse</span>
-            </span>
-          )}
-          {isCollapsed && (
-            <div className="text-teal-200 w-full flex justify-center">
-              <Sparkles size={20} />
-            </div>
+        <div className="h-16 flex items-center justify-between px-3 border-b border-slate-700 gap-2">
+          {!isCollapsed ? (
+            <BrandLogo to={`/dashboard/${user.role}`} size="sm" imgClassName="max-w-[140px]" />
+          ) : (
+            <BrandLogo to={`/dashboard/${user.role}`} size="sm" imgClassName="h-9 w-9" />
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="text-slate-300 hover:text-white transition-colors focus:outline-none hidden md:block rounded-md"
+            className="text-slate-300 hover:text-white transition-colors focus:outline-none hidden md:block rounded-md shrink-0"
           >
             {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>

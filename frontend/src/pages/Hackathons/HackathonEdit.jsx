@@ -11,13 +11,16 @@ import Card from '../../components/ui/Card';
 import Loader from '../../components/ui/Loader';
 import { getApiList } from '../../utils/apiResponse';
 import toast from 'react-hot-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+
+const emptyPrize = () => ({ title: '', value: '', description: '' });
 
 const HackathonEdit = () => {
   const { hackathonId } = useParams();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [prizes, setPrizes] = useState([emptyPrize()]);
 
   const {
     register,
@@ -28,13 +31,24 @@ const HackathonEdit = () => {
     resolver: zodResolver(hackathonSchema),
   });
 
-  // Convert Date from DB to HTML local time format
   const formatDatetimeLocal = (isoString) => {
     if (!isoString) return '';
     const date = new Date(isoString);
     const tzoffset = date.getTimezoneOffset() * 60000;
     const localISOTime = new Date(date.getTime() - tzoffset).toISOString().slice(0, 16);
     return localISOTime;
+  };
+
+  const updatePrize = (index, field, value) => {
+    setPrizes((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
+  };
+
+  const addPrize = () => {
+    setPrizes((prev) => [...prev, emptyPrize()]);
+  };
+
+  const removePrize = (index) => {
+    setPrizes((prev) => prev.filter((_, i) => i !== index));
   };
 
   useEffect(() => {
@@ -53,14 +67,28 @@ const HackathonEdit = () => {
         setValue('title', h.title);
         setValue('tagline', h.tagline || '');
         setValue('description', h.description);
+        setValue('banner', h.banner || '');
         setValue('registrationStart', formatDatetimeLocal(h.registrationStart));
         setValue('registrationEnd', formatDatetimeLocal(h.registrationEnd));
         setValue('hackathonStart', formatDatetimeLocal(h.hackathonStart));
         setValue('hackathonEnd', formatDatetimeLocal(h.hackathonEnd));
+        setValue('submissionStart', formatDatetimeLocal(h.submissionStart));
+        setValue('submissionDeadline', formatDatetimeLocal(h.submissionDeadline));
         setValue('minTeamSize', h.minTeamSize);
         setValue('maxTeamSize', h.maxTeamSize);
+        setValue('maxTeams', h.maxTeams || undefined);
+        setValue('prizePool', h.prizePool || '');
         setValue('contactEmail', h.contactEmail);
         setValue('rules', h.rules || '');
+        setPrizes(
+          h.prizes?.length
+            ? h.prizes.map((p) => ({
+                title: p.title || '',
+                value: p.value || '',
+                description: p.description || '',
+              }))
+            : [emptyPrize()]
+        );
       } catch (err) {
         toast.error('Failed to load hackathon data.');
       } finally {
@@ -73,12 +101,29 @@ const HackathonEdit = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
+      const cleanedPrizes = prizes
+        .map((p) => ({
+          title: (p.title || '').trim(),
+          value: (p.value || '').trim() || null,
+          description: (p.description || '').trim() || null,
+        }))
+        .filter((p) => p.title);
+
       const payload = {
         ...data,
+        banner: data.banner?.trim() || null,
+        prizes: cleanedPrizes,
+        maxTeams: data.maxTeams || undefined,
         registrationStart: new Date(data.registrationStart).toISOString(),
         registrationEnd: new Date(data.registrationEnd).toISOString(),
         hackathonStart: new Date(data.hackathonStart).toISOString(),
         hackathonEnd: new Date(data.hackathonEnd).toISOString(),
+        submissionStart: data.submissionStart
+          ? new Date(data.submissionStart).toISOString()
+          : undefined,
+        submissionDeadline: data.submissionDeadline
+          ? new Date(data.submissionDeadline).toISOString()
+          : undefined,
       };
 
       await api.patch(`/hackathons/${hackathonId}`, payload);
@@ -126,6 +171,14 @@ const HackathonEdit = () => {
               label="Event Description"
               error={errors.description?.message}
               {...register('description')}
+            />
+
+            <Input
+              id="banner"
+              label="Poster / Banner Image URL (optional)"
+              placeholder="https://example.com/poster.jpg"
+              error={errors.banner?.message}
+              {...register('banner')}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -177,6 +230,68 @@ const HackathonEdit = () => {
                 error={errors.maxTeamSize?.message}
                 {...register('maxTeamSize', { valueAsNumber: true })}
               />
+            </div>
+
+            <Input
+              id="prizePool"
+              label="Total Prize Pool (optional)"
+              placeholder="e.g. $10,000"
+              error={errors.prizePool?.message}
+              {...register('prizePool')}
+            />
+
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-secondary">Prize breakdown</p>
+                  <p className="text-xs text-slate-400">Add prizes for 1st, 2nd, 3rd, and any other winners.</p>
+                </div>
+                <Button type="button" variant="secondary" onClick={addPrize}>
+                  <Plus size={14} className="mr-1 inline" /> Add prize
+                </Button>
+              </div>
+              {prizes.map((prize, index) => (
+                <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start border border-border rounded-lg p-3">
+                  <div className="md:col-span-3">
+                    <Input
+                      id={`prize-title-${index}`}
+                      label="Place / Title"
+                      placeholder="e.g. 1st Place"
+                      value={prize.title}
+                      onChange={(e) => updatePrize(index, 'title', e.target.value)}
+                    />
+                  </div>
+                  <div className="md:col-span-3">
+                    <Input
+                      id={`prize-value-${index}`}
+                      label="Amount / Value"
+                      placeholder="e.g. $5,000"
+                      value={prize.value}
+                      onChange={(e) => updatePrize(index, 'value', e.target.value)}
+                    />
+                  </div>
+                  <div className="md:col-span-5">
+                    <Input
+                      id={`prize-desc-${index}`}
+                      label="Description (optional)"
+                      placeholder="e.g. Cash + internship offer"
+                      value={prize.description}
+                      onChange={(e) => updatePrize(index, 'description', e.target.value)}
+                    />
+                  </div>
+                  <div className="md:col-span-1 flex md:justify-end md:pt-7">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => removePrize(index)}
+                      disabled={prizes.length <= 1}
+                      aria-label="Remove prize"
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
 
             <Input

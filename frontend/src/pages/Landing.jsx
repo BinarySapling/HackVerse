@@ -3,12 +3,20 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Trophy, Users, Code, HelpCircle, ArrowRight } from 'lucide-react';
 import Button from '../components/ui/Button';
+import BrandLogo from '../components/BrandLogo';
 
 const Landing = () => {
   return (
     <div className="flex flex-col gap-14 py-6">
       {/* Hero Section */}
       <section className="text-center flex flex-col items-center gap-6 max-w-4xl mx-auto py-10">
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <BrandLogo to={null} size="xl" imgClassName="h-24 sm:h-28" />
+        </motion.div>
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}

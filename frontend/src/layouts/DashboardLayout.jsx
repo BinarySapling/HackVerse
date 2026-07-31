@@ -12,6 +12,7 @@ const DashboardLayout = () => {
     if (path.includes('/dashboard/organizer')) return 'Organizer Console';
     if (path.includes('/dashboard/participant')) return 'Participant Arena';
     if (path.includes('/dashboard/judge')) return 'Judge Assessment Panel';
+    if (path.includes('/organizer/hackathons')) return 'Hackathons';
     if (path.includes('/hackathons/create')) return 'Launch Hackathon';
     if (path.includes('/hackathons/edit')) return 'Edit Hackathon Details';
     if (path.includes('/registrations/me')) return 'My Event Registrations';
