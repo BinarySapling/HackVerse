@@ -1,8 +1,5 @@
 import mongoose from 'mongoose';
 
-/**
- * @desc Mongoose Schema for Project Submission tracking
- */
 const submissionSchema = new mongoose.Schema(
   {
     team: {
@@ -22,8 +19,8 @@ const submissionSchema = new mongoose.Schema(
     },
     demoUrl: {
       type: String,
-      required: [true, 'Demo URL is required'],
-      trim: true
+      trim: true,
+      default: null
     },
     presentationUrl: {
       type: String,

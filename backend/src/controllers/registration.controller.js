@@ -3,11 +3,6 @@ import ApiResponse from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import HttpStatus from '../constants/httpStatus.js';
 
-/**
- * @desc Handle HTTP POST register participant for a hackathon
- * @route POST /api/v1/hackathons/:hackathonId/register
- * @access Protected (Participant only)
- */
 export const registerForHackathon = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const userRole = req.user.role;
@@ -23,11 +18,6 @@ export const registerForHackathon = asyncHandler(async (req, res) => {
   );
 });
 
-/**
- * @desc Handle HTTP GET fetch active registrations of logged-in user
- * @route GET /api/v1/registrations/me
- * @access Protected (Participant only)
- */
 export const getMyRegistrations = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const result = await registrationService.getMyRegistrations(userId, req.query);
@@ -41,11 +31,6 @@ export const getMyRegistrations = asyncHandler(async (req, res) => {
   );
 });
 
-/**
- * @desc Handle HTTP PATCH cancel registration
- * @route PATCH /api/v1/registrations/:id/cancel
- * @access Protected (Owner only)
- */
 export const cancelRegistration = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;

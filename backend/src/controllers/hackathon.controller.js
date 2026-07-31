@@ -3,11 +3,6 @@ import ApiResponse from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import HttpStatus from '../constants/httpStatus.js';
 
-/**
- * @desc Handle HTTP POST create hackathon request
- * @route POST /api/v1/hackathons
- * @access Protected (Organizer/Admin only)
- */
 export const createHackathon = asyncHandler(async (req, res) => {
   const organizerId = req.user.id;
   const hackathon = await hackathonService.createHackathon(organizerId, req.body);
@@ -20,11 +15,6 @@ export const createHackathon = asyncHandler(async (req, res) => {
   );
 });
 
-/**
- * @desc Handle HTTP GET fetch list of hackathons
- * @route GET /api/v1/hackathons
- * @access Public
- */
 export const getHackathons = asyncHandler(async (req, res) => {
   const result = await hackathonService.getHackathons(req.query);
 
@@ -37,11 +27,6 @@ export const getHackathons = asyncHandler(async (req, res) => {
   );
 });
 
-/**
- * @desc Handle HTTP GET fetch hackathon details by URL slug
- * @route GET /api/v1/hackathons/:slug
- * @access Public
- */
 export const getHackathonBySlug = asyncHandler(async (req, res) => {
   const { slug } = req.params;
   const hackathon = await hackathonService.getHackathonBySlug(slug);
@@ -54,11 +39,6 @@ export const getHackathonBySlug = asyncHandler(async (req, res) => {
   );
 });
 
-/**
- * @desc Handle HTTP PATCH update hackathon request
- * @route PATCH /api/v1/hackathons/:id
- * @access Protected (Organizer Owner/Admin only)
- */
 export const updateHackathon = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
@@ -74,11 +54,6 @@ export const updateHackathon = asyncHandler(async (req, res) => {
   );
 });
 
-/**
- * @desc Handle HTTP DELETE soft-delete hackathon request
- * @route DELETE /api/v1/hackathons/:id
- * @access Protected (Organizer Owner/Admin only)
- */
 export const deleteHackathon = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
@@ -93,10 +68,26 @@ export const deleteHackathon = asyncHandler(async (req, res) => {
   );
 });
 
+export const publishHackathon = asyncHandler(async (req, res) => {
+  const hackathon = await hackathonService.publishHackathon(
+    req.params.id,
+    req.user.id,
+    req.user.role
+  );
+
+  return ApiResponse.success(
+    res,
+    HttpStatus.OK,
+    'Hackathon published successfully',
+    hackathon
+  );
+});
+
 export default {
   createHackathon,
   getHackathons,
   getHackathonBySlug,
   updateHackathon,
-  deleteHackathon
+  deleteHackathon,
+  publishHackathon
 };

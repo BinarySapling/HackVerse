@@ -19,10 +19,6 @@ mongoose.connection.on('disconnected', () => {
   logger.warn('MongoDB connection disconnected');
 });
 
-/**
- * @desc Establish connection to MongoDB database
- * @returns {Promise<void>} Resolves when connection succeeds, otherwise throws
- */
 export const connectDB = async () => {
   try {
     await mongoose.connect(config.mongoUri);

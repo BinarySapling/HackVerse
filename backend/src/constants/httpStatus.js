@@ -1,6 +1,3 @@
-/**
- * @desc HTTP response status code constants mapping
- */
 const HttpStatus = {
   OK: 200,
   CREATED: 201,

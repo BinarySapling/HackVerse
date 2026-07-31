@@ -1,8 +1,5 @@
 import Roles from './roles.js';
 
-/**
- * @desc Centralized role allowlists for API route-level RBAC.
- */
 export const RolePolicies = Object.freeze({
   ANY_AUTHENTICATED: Object.freeze([
     Roles.ADMIN,
@@ -18,9 +15,6 @@ export const RolePolicies = Object.freeze({
   PARTICIPANT_OR_ADMIN: Object.freeze([Roles.PARTICIPANT, Roles.ADMIN])
 });
 
-/**
- * @desc Stable permission labels for documentation and audit output.
- */
 const Permissions = Object.freeze({
   AUTH_PROFILE_READ: 'auth:profile:read',
   HACKATHON_CREATE: 'hackathon:create',

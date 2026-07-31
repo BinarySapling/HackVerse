@@ -1,9 +1,6 @@
 import mongoose from 'mongoose';
 import Evaluation from '../models/Evaluation.js';
 
-/**
- * Common aggregation pipeline stages for base ranking.
- */
 const getBaseRankingPipeline = (hackathonId) => {
   return [
     {
@@ -17,16 +14,22 @@ const getBaseRankingPipeline = (hackathonId) => {
         _id: '$submission',
         totalScoreAvg: { $avg: '$totalScore' },
         innovationScoreAvg: { $avg: '$innovationScore' },
+        uiuxScoreAvg: { $avg: { $ifNull: ['$uiuxScore', 0] } },
         technicalScoreAvg: { $avg: '$technicalScore' },
         presentationScoreAvg: { $avg: '$presentationScore' },
+        codeQualityScoreAvg: { $avg: { $ifNull: ['$codeQualityScore', 0] } },
+        problemSolvingScoreAvg: { $avg: { $ifNull: ['$problemSolvingScore', 0] } },
         judgeCount: { $sum: 1 },
         evaluations: {
           $push: {
             judge: '$judge',
             totalScore: '$totalScore',
             innovationScore: '$innovationScore',
+            uiuxScore: { $ifNull: ['$uiuxScore', 0] },
             technicalScore: '$technicalScore',
             presentationScore: '$presentationScore',
+            codeQualityScore: { $ifNull: ['$codeQualityScore', 0] },
+            problemSolvingScore: { $ifNull: ['$problemSolvingScore', 0] },
             remarks: '$remarks'
           }
         }
@@ -74,8 +77,11 @@ const getBaseRankingPipeline = (hackathonId) => {
       $addFields: {
         averageScore: { $round: ['$totalScoreAvg', 2] },
         innovation: { $round: ['$innovationScoreAvg', 2] },
+        uiux: { $round: ['$uiuxScoreAvg', 2] },
         technical: { $round: ['$technicalScoreAvg', 2] },
-        presentation: { $round: ['$presentationScoreAvg', 2] }
+        presentation: { $round: ['$presentationScoreAvg', 2] },
+        codeQuality: { $round: ['$codeQualityScoreAvg', 2] },
+        problemSolving: { $round: ['$problemSolvingScoreAvg', 2] }
       }
     },
     
@@ -117,9 +123,6 @@ const getBaseRankingPipeline = (hackathonId) => {
   ];
 };
 
-/**
- * Retrieve public leaderboard for a hackathon
- */
 export const getLeaderboard = async (hackathonId, skip, limit) => {
   const pipeline = [
     ...getBaseRankingPipeline(hackathonId),
@@ -153,9 +156,6 @@ export const getLeaderboard = async (hackathonId, skip, limit) => {
   return { results, total };
 };
 
-/**
- * Retrieve detailed organizer results with search and pagination
- */
 export const getOrganizerResults = async (hackathonId, skip, limit, searchQuery) => {
   const pipeline = [
     ...getBaseRankingPipeline(hackathonId),
@@ -214,9 +214,6 @@ export const getOrganizerResults = async (hackathonId, skip, limit, searchQuery)
   return { results, total };
 };
 
-/**
- * Retrieve a specific team's result with full judge scores
- */
 export const getTeamResult = async (hackathonId, teamId) => {
   const pipeline = [
     ...getBaseRankingPipeline(hackathonId),

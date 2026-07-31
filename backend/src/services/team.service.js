@@ -7,13 +7,6 @@ import ErrorCodes from '../errors/ErrorCodes.js';
 import logger from '../config/logger.js';
 import { isAdmin } from '../utils/authorization.js';
 
-/**
- * @desc Create a new team under a hackathon
- * @param {string} leaderId - Object ID of the team creator (leader)
- * @param {string} hackathonId - Object ID of the hackathon
- * @param {Object} payload - Create parameters
- * @returns {Promise<Object>} Created Team document
- */
 export const createTeam = async (leaderId, hackathonId, payload) => {
   const { name } = payload;
 
@@ -70,12 +63,6 @@ export const createTeam = async (leaderId, hackathonId, payload) => {
   return team;
 };
 
-/**
- * @desc Retrieve the active team belonging to the logged-in user in a hackathon
- * @param {string} userId - Object ID of the user
- * @param {string} hackathonId - Object ID of the hackathon
- * @returns {Promise<Object>} Populated Team document
- */
 export const getMyTeam = async (userId, hackathonId) => {
   const team = await teamRepository.findByMember(userId, hackathonId);
   if (!team) {
@@ -88,13 +75,6 @@ export const getMyTeam = async (userId, hackathonId) => {
   return team;
 };
 
-/**
- * @desc Add a registered participant user to a team (leader authorization required)
- * @param {string} teamId - Object ID of the team
- * @param {string} leaderId - Object ID of the leader making the request
- * @param {string} memberId - Object ID of the participant to add
- * @returns {Promise<Object>} Updated Team document
- */
 export const addMember = async (teamId, leaderId, memberId) => {
   // 1. Fetch team details
   const team = await teamRepository.findById(teamId);
@@ -151,13 +131,6 @@ export const addMember = async (teamId, leaderId, memberId) => {
   return updatedTeam;
 };
 
-/**
- * @desc Remove a participant from a team (leader authorization required)
- * @param {string} teamId - Object ID of the team
- * @param {string} leaderId - Object ID of the leader making the request
- * @param {string} memberId - Object ID of the user to remove
- * @returns {Promise<Object>} Updated Team document
- */
 export const removeMember = async (teamId, leaderId, memberId) => {
   // 1. Fetch team details
   const team = await teamRepository.findById(teamId);
@@ -195,19 +168,23 @@ export const removeMember = async (teamId, leaderId, memberId) => {
     );
   }
 
-  // 5. Remove member
+  // 5. Only allow removals before registration closes
+  const hackathon = await hackathonRepository.findById(team.hackathon._id || team.hackathon);
+  if (hackathon && new Date() > new Date(hackathon.registrationEnd)) {
+    throw new AppError(
+      'Cannot remove members after registration has closed',
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
+  // 6. Remove member
   const updatedTeam = await teamRepository.removeMember(teamId, memberId);
 
   logger.info(`Member Removed: User "${memberId}" removed from team "${teamId}" by leader "${leaderId}"`);
   return updatedTeam;
 };
 
-/**
- * @desc Make a participant leave their active team
- * @param {string} teamId - Object ID of the team
- * @param {string} memberId - Object ID of the participant leaving
- * @returns {Promise<void>}
- */
 export const leaveTeam = async (teamId, memberId) => {
   // 1. Fetch team details
   const team = await teamRepository.findById(teamId);
@@ -241,13 +218,6 @@ export const leaveTeam = async (teamId, memberId) => {
   logger.info(`Member Left: User "${memberId}" left team "${teamId}" successfully`);
 };
 
-/**
- * @desc Delete a team (leader or admin only)
- * @param {string} teamId - Object ID of the team
- * @param {string} userId - Object ID of the user requesting deletion
- * @param {string} userRole - Role profile of the user
- * @returns {Promise<void>}
- */
 export const deleteTeam = async (teamId, userId, userRole) => {
   // 1. Fetch team details
   const team = await teamRepository.findById(teamId);

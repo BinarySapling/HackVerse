@@ -43,9 +43,6 @@ const faqValidator = z.object({
     .min(1, "FAQ answer cannot be empty")
 });
 
-/**
- * @desc Zod validation schema for creating a new Hackathon
- */
 export const createHackathonSchema = z.object({
   title: z
     .string({ required_error: "Hackathon title is required" })
@@ -74,6 +71,16 @@ export const createHackathonSchema = z.object({
   hackathonEnd: z
     .string({ required_error: "Hackathon end date is required" })
     .datetime({ message: "Hackathon end must be a valid ISO datetime string" }),
+  submissionStart: z
+    .string()
+    .datetime({ message: "Submission start must be a valid ISO datetime string" })
+    .optional()
+    .nullable(),
+  submissionDeadline: z
+    .string()
+    .datetime({ message: "Submission deadline must be a valid ISO datetime string" })
+    .optional()
+    .nullable(),
   maxTeamSize: z
     .number({ required_error: "Maximum team size is required" })
     .int()
@@ -82,6 +89,13 @@ export const createHackathonSchema = z.object({
     .number({ required_error: "Minimum team size is required" })
     .int()
     .min(1, "Minimum team size must be at least 1"),
+  maxTeams: z
+    .number()
+    .int()
+    .min(1, "Maximum teams must be at least 1")
+    .optional()
+    .nullable(),
+  prizePool: z.string().trim().optional().nullable(),
   status: z.nativeEnum(HackathonStatus).optional(),
   visibility: z.enum(['public', 'private']).optional(),
   problemStatements: z.array(problemStatementValidator).optional().default([]),
@@ -89,6 +103,10 @@ export const createHackathonSchema = z.object({
   rules: z.string().optional().nullable(),
   prizes: z.array(prizeValidator).optional().default([]),
   judgingCriteria: z.array(judgingCriteriaValidator).optional().default([]),
+  judgeEmails: z
+    .array(z.string().trim().email("Please provide valid judge email addresses").toLowerCase())
+    .optional()
+    .default([]),
   contactEmail: z
     .string({ required_error: "Contact email is required" })
     .trim()
@@ -97,9 +115,6 @@ export const createHackathonSchema = z.object({
   faq: z.array(faqValidator).optional().default([])
 });
 
-/**
- * @desc Zod validation schema for updating an existing Hackathon
- */
 export const updateHackathonSchema = createHackathonSchema.partial();
 
 export default {

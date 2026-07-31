@@ -3,11 +3,6 @@ import HttpStatus from '../constants/httpStatus.js';
 import ErrorCodes from '../errors/ErrorCodes.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
-/**
- * @desc Generic request validation middleware mapping Zod schema validation errors
- * @param {Object} schema - Zod schema to parse request body against
- * @returns {Function} Express middleware function
- */
 export const validate = (schema) => {
   return asyncHandler(async (req, res, next) => {
     try {

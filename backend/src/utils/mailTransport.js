@@ -22,6 +22,9 @@ const createTransporter = () => {
     host: config.smtp.host,
     port: config.smtp.port,
     secure: config.smtp.secure,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
     auth: {
       user: config.smtp.user,
       pass: config.smtp.pass

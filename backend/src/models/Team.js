@@ -1,8 +1,5 @@
 import mongoose from 'mongoose';
 
-/**
- * @desc Mongoose Schema for Team Management tracking
- */
 const teamSchema = new mongoose.Schema(
   {
     name: {

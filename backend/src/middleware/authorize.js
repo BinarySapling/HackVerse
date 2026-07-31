@@ -3,11 +3,6 @@ import AppError from '../errors/AppError.js';
 import HttpStatus from '../constants/httpStatus.js';
 import ErrorCodes from '../errors/ErrorCodes.js';
 
-/**
- * @desc Higher-order middleware to enforce role-based access control (RBAC) guards
- * @param {...string} allowedRoles - Supported roles authorized to access the route
- * @returns {Function} Express middleware function
- */
 export const authorize = (...allowedRoles) => {
   const roles = allowedRoles.flat();
 

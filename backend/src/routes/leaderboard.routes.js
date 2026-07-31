@@ -2,7 +2,9 @@ import express from 'express';
 import {
   getLeaderboard,
   getOrganizerResults,
-  getMyResult
+  getMyResult,
+  closeEvaluation,
+  announceWinners
 } from '../controllers/leaderboard.controller.js';
 import authenticate from '../middleware/authenticate.js';
 import authorize from '../middleware/authorize.js';
@@ -36,6 +38,22 @@ router.get(
   authorize(RolePolicies.PARTICIPANT_ONLY),
   validateHackathonIdParam,
   getMyResult
+);
+
+router.post(
+  '/hackathons/:hackathonId/close-evaluation',
+  authenticate,
+  authorize(RolePolicies.ORGANIZER_OR_ADMIN),
+  validateHackathonIdParam,
+  closeEvaluation
+);
+
+router.post(
+  '/hackathons/:hackathonId/announce-winners',
+  authenticate,
+  authorize(RolePolicies.ORGANIZER_OR_ADMIN),
+  validateHackathonIdParam,
+  announceWinners
 );
 
 export default router;

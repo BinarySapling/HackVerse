@@ -1,6 +1,3 @@
-/**
- * @desc Catalog of standardized application error codes
- */
 const ErrorCodes = {
   VALIDATION_ERROR: "VALIDATION_ERROR",
   UNAUTHORIZED: "UNAUTHORIZED",

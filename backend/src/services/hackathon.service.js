@@ -3,7 +3,10 @@ import AppError from '../errors/AppError.js';
 import HttpStatus from '../constants/httpStatus.js';
 import ErrorCodes from '../errors/ErrorCodes.js';
 import logger from '../config/logger.js';
+import User from '../models/User.js';
+import Roles from '../constants/roles.js';
 import { isAdmin, isOwner } from '../utils/authorization.js';
+import emailService from './email.service.js';
 
 // Convert a string to an URL-safe slug
 const slugify = (text) => {
@@ -66,12 +69,37 @@ const validateTeamSizes = (minTeamSize, maxTeamSize) => {
   }
 };
 
-/**
- * @desc Create and save a new Hackathon record
- * @param {string} organizerId - Object ID of the organizer creating it
- * @param {Object} payload - Create parameters
- * @returns {Promise<Object>} The saved hackathon document
- */
+const resolveJudgeEmails = async (judgeEmails = []) => {
+  const uniqueEmails = [...new Set(judgeEmails.map(email => email.trim().toLowerCase()).filter(Boolean))];
+  if (uniqueEmails.length === 0) {
+    return [];
+  }
+
+  const judges = await User.find({ email: { $in: uniqueEmails }, isDeleted: false });
+  const foundEmails = new Set(judges.map(judge => judge.email));
+  const missingEmails = uniqueEmails.filter(email => !foundEmails.has(email));
+  if (missingEmails.length > 0) {
+    throw new AppError(
+      `Judge account not found for: ${missingEmails.join(', ')}`,
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
+  const nonJudgeEmails = judges
+    .filter(judge => judge.role !== Roles.JUDGE)
+    .map(judge => judge.email);
+  if (nonJudgeEmails.length > 0) {
+    throw new AppError(
+      `These users are not registered as judges: ${nonJudgeEmails.join(', ')}`,
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
+  return judges;
+};
+
 export const createHackathon = async (organizerId, payload) => {
   const {
     title,
@@ -80,12 +108,14 @@ export const createHackathon = async (organizerId, payload) => {
     hackathonStart,
     hackathonEnd,
     minTeamSize,
-    maxTeamSize
+    maxTeamSize,
+    judgeEmails = []
   } = payload;
 
   // 1. Validate timelines & team sizes
   validateDates(registrationStart, registrationEnd, hackathonStart, hackathonEnd);
   validateTeamSizes(minTeamSize, maxTeamSize);
+  const judges = await resolveJudgeEmails(judgeEmails);
 
   // 2. Generate unique slug (resolving conflicts by appending sequential suffixes)
   let baseSlug = slugify(title);
@@ -102,19 +132,27 @@ export const createHackathon = async (organizerId, payload) => {
   // 3. Persist document
   const hackathon = await hackathonRepository.create({
     ...payload,
+    judgeEmails: undefined,
+    judges: judges.map(judge => judge._id),
     slug,
     organizer: organizerId
   });
 
   logger.info(`Hackathon Created: "${hackathon.title}" [ID: ${hackathon._id}] [Organizer: ${organizerId}]`);
+
+  if (judges.length > 0) {
+    const organizer = await User.findById(organizerId);
+    await Promise.allSettled(judges.map(judge => emailService.sendJudgeInvitation({
+      judge,
+      hackathon,
+      organizer
+    })));
+    logger.info(`Judge invitations queued for hackathon "${hackathon._id}": ${judges.length}`);
+  }
+
   return hackathon;
 };
 
-/**
- * @desc Fetch a paginated, sorted, and filtered list of active hackathons
- * @param {Object} query - Express request query parameters
- * @returns {Promise<Object>} Object containing matched records and pagination metadata
- */
 export const getHackathons = async (query) => {
   const page = parseInt(query.page, 10) || 1;
   const limit = parseInt(query.limit, 10) || 10;
@@ -125,6 +163,9 @@ export const getHackathons = async (query) => {
 
   if (query.status) {
     filter.status = query.status;
+  } else if (query.includeDrafts !== 'true') {
+    // Public/default listing hides unpublished drafts
+    filter.status = { $ne: 'draft' };
   }
   if (query.visibility) {
     filter.visibility = query.visibility;
@@ -159,27 +200,14 @@ export const getHackathons = async (query) => {
   };
 };
 
-/**
- * @desc Retrieve active hackathon details by URL slug
- * @param {string} slug - Unique slug string
- * @returns {Promise<Object>} The matched hackathon document
- */
 export const getHackathonBySlug = async (slug) => {
-  const hackathon = await hackathonRepository.findBySlug(slug);
+  const hackathon = await hackathonRepository.findBySlugOrId(slug);
   if (!hackathon) {
     throw new AppError("Hackathon not found", HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND);
   }
   return hackathon;
 };
 
-/**
- * @desc Update hackathon properties with ownership validation guards
- * @param {string} hackathonId - Object ID of the hackathon
- * @param {string} userId - Object ID of the user request
- * @param {string} userRole - Privileged role of the user
- * @param {Object} updatePayload - Parameters to update
- * @returns {Promise<Object>} The updated hackathon document
- */
 export const updateHackathon = async (hackathonId, userId, userRole, updatePayload) => {
   // 1. Retrieve the document
   const hackathon = await hackathonRepository.findById(hackathonId);
@@ -217,13 +245,6 @@ export const updateHackathon = async (hackathonId, userId, userRole, updatePaylo
   return updatedHackathon;
 };
 
-/**
- * @desc Soft-delete a hackathon record with ownership validation guards
- * @param {string} hackathonId - Object ID of the hackathon
- * @param {string} userId - Object ID of the user request
- * @param {string} userRole - Privileged role of the user
- * @returns {Promise<void>}
- */
 export const deleteHackathon = async (hackathonId, userId, userRole) => {
   // 1. Retrieve the document
   const hackathon = await hackathonRepository.findById(hackathonId);
@@ -245,10 +266,36 @@ export const deleteHackathon = async (hackathonId, userId, userRole) => {
   logger.info(`Hackathon Deleted: "${hackathon.title}" [ID: ${hackathonId}] [User: ${userId}]`);
 };
 
+export const publishHackathon = async (hackathonId, userId, userRole) => {
+  const hackathon = await hackathonRepository.findById(hackathonId);
+  if (!hackathon || hackathon.isDeleted) {
+    throw new AppError('Hackathon not found', HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND);
+  }
+
+  const ownsHackathon = isOwner(hackathon.organizer, userId);
+  const hasAdminBypass = isAdmin(userRole);
+  if (!ownsHackathon && !hasAdminBypass) {
+    throw new AppError('Access denied: You do not own this hackathon', HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN);
+  }
+
+  const now = new Date();
+  let status = 'published';
+  if (now >= new Date(hackathon.registrationStart) && now <= new Date(hackathon.registrationEnd)) {
+    status = 'registration_open';
+  } else if (now >= new Date(hackathon.hackathonStart) && now <= new Date(hackathon.hackathonEnd)) {
+    status = 'ongoing';
+  }
+
+  const updated = await hackathonRepository.update(hackathonId, { status });
+  logger.info(`Hackathon Published: "${updated.title}" [ID: ${hackathonId}] [Status: ${status}]`);
+  return updated;
+};
+
 export default {
   createHackathon,
   getHackathons,
   getHackathonBySlug,
   updateHackathon,
-  deleteHackathon
+  deleteHackathon,
+  publishHackathon
 };

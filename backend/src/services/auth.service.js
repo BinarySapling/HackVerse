@@ -11,21 +11,11 @@ import {
   verifyRefreshToken
 } from '../utils/jwt.js';
 
-/**
- * @desc Generate SHA-256 hash of a token string to avoid storing plaintext in database
- * @param {string} token - Plaintext token string
- * @returns {string|null} Hashed token hex string or null
- */
 export const hashToken = (token) => {
   if (!token) return null;
   return crypto.createHash('sha256').update(token).digest('hex');
 };
 
-/**
- * @desc Handle registration of a new user
- * @param {Object} userData - Registration payload details
- * @returns {Promise<Object>} The newly created user document
- */
 export const registerUser = async (userData) => {
   const { email, password } = userData;
 
@@ -54,12 +44,6 @@ export const registerUser = async (userData) => {
   return createdUser;
 };
 
-/**
- * @desc Handle login authentication logic
- * @param {string} email - Input email address
- * @param {string} password - Input plaintext password
- * @returns {Promise<Object>} Object containing user details and signed JWT access & refresh tokens
- */
 export const loginUser = async (email, password) => {
   if (!email || !password) {
     throw new AppError(
@@ -133,11 +117,6 @@ export const loginUser = async (email, password) => {
   };
 };
 
-/**
- * @desc Rotate session tokens using a valid refresh token
- * @param {string} token - Client-supplied plaintext refresh token
- * @returns {Promise<Object>} Object containing new access and refresh tokens
- */
 export const refreshUserSession = async (token) => {
   if (!token) {
     logger.warn("Refresh session failed: Missing refresh token parameter");
@@ -199,11 +178,6 @@ export const refreshUserSession = async (token) => {
   };
 };
 
-/**
- * @desc Handle user session logout and cookie invalidation
- * @param {string} token - Client-supplied plaintext refresh token
- * @returns {Promise<void>}
- */
 export const logoutUser = async (token) => {
   if (!token) {
     logger.info("Logout requested without active token session (noop)");

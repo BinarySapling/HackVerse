@@ -1,6 +1,3 @@
-/**
- * @desc Global Success and Error response string message constants
- */
 export const SuccessMessages = {
   SERVER_HEALTHY: "Server is running"
 };

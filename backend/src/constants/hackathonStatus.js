@@ -1,6 +1,3 @@
-/**
- * @desc Catalog of standard states for a hackathon
- */
 const HackathonStatus = {
   DRAFT: "draft",
   PUBLISHED: "published",

@@ -10,19 +10,10 @@ const getCookieOptions = () => {
   };
 };
 
-/**
- * @desc Set the secure HTTP-only refresh token cookie
- * @param {Object} res - Express response object
- * @param {string} token - Signed refresh token string
- */
 export const setRefreshCookie = (res, token) => {
   res.cookie('refreshToken', token, getCookieOptions());
 };
 
-/**
- * @desc Clear the refresh token cookie
- * @param {Object} res - Express response object
- */
 export const clearRefreshCookie = (res) => {
   res.clearCookie('refreshToken', {
     httpOnly: true,

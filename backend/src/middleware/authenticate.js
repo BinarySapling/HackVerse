@@ -6,9 +6,6 @@ import { verifyAccessToken } from '../utils/jwt.js';
 import authRepository from '../repositories/auth.repository.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
-/**
- * @desc Route protection middleware verifying JWT access token and active user status
- */
 export const authenticate = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
   const logMetadata = { requestId: req.requestId };

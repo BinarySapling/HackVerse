@@ -60,9 +60,6 @@ const faqSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
-/**
- * @desc Mongoose Database Schema for Hackathon details
- */
 const hackathonSchema = new mongoose.Schema(
   {
     title: {
@@ -115,6 +112,14 @@ const hackathonSchema = new mongoose.Schema(
       type: Date,
       required: [true, "Hackathon end date is required"]
     },
+    submissionStart: {
+      type: Date,
+      default: null
+    },
+    submissionDeadline: {
+      type: Date,
+      default: null
+    },
     maxTeamSize: {
       type: Number,
       required: [true, "Maximum team size is required"],
@@ -127,6 +132,16 @@ const hackathonSchema = new mongoose.Schema(
       default: 1,
       min: [1, "Minimum team size must be at least 1"]
     },
+    maxTeams: {
+      type: Number,
+      default: null,
+      min: [1, "Maximum teams must be at least 1"]
+    },
+    prizePool: {
+      type: String,
+      trim: true,
+      default: null
+    },
     status: {
       type: String,
       enum: {
@@ -134,6 +149,18 @@ const hackathonSchema = new mongoose.Schema(
         message: "Provided status is invalid"
       },
       default: HackathonStatus.DRAFT
+    },
+    evaluationClosed: {
+      type: Boolean,
+      default: false
+    },
+    winnersAnnounced: {
+      type: Boolean,
+      default: false
+    },
+    winnersAnnouncedAt: {
+      type: Date,
+      default: null
     },
     visibility: {
       type: String,
@@ -162,7 +189,7 @@ const hackathonSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.[A-Za-z]{2,})+$/,
         "Please provide a valid contact email address"
       ]
     },

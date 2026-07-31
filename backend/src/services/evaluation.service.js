@@ -10,14 +10,6 @@ import Roles from '../constants/roles.js';
 import { assertOrganizerOwnsHackathonOrAdmin, isAdmin, isOwner } from '../utils/authorization.js';
 import emailService from './email.service.js';
 
-/**
- * @desc Assign a judge to a hackathon (Organizer and Admin only)
- * @param {string} organizerId - Object ID of the organizer/admin user
- * @param {string} organizerRole - Role profile of the requesting user
- * @param {string} hackathonId - Object ID of the hackathon
- * @param {string} judgeId - Object ID of the judge user to assign
- * @returns {Promise<Object>} Updated Hackathon document
- */
 export const assignJudge = async (organizerId, organizerRole, hackathonId, judgeId) => {
   // 1. Fetch hackathon details
   const hackathon = await hackathonRepository.findById(hackathonId);
@@ -79,14 +71,6 @@ export const assignJudge = async (organizerId, organizerRole, hackathonId, judge
   return hackathon;
 };
 
-/**
- * @desc Evaluate a hackathon submission (assigned Judge only)
- * @param {string} judgeId - Object ID of the judge
- * @param {string} judgeRole - Role profile of the judge
- * @param {string} submissionId - Object ID of the submission to score
- * @param {Object} payload - Scoring values and remarks
- * @returns {Promise<Object>} Saved Evaluation document
- */
 export const evaluateSubmission = async (judgeId, judgeRole, submissionId, payload) => {
   // 1. Fetch submission details
   const submission = await submissionRepository.findById(submissionId);
@@ -121,9 +105,31 @@ export const evaluateSubmission = async (judgeId, judgeRole, submissionId, paylo
     );
   }
 
+  if (hackathon.evaluationClosed) {
+    throw new AppError(
+      "Evaluation period has closed for this hackathon",
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
   // 4. Calculate totalScore
-  const { innovationScore, technicalScore, presentationScore, remarks } = payload;
-  const totalScore = innovationScore + technicalScore + presentationScore;
+  const {
+    innovationScore,
+    uiuxScore = 0,
+    technicalScore,
+    presentationScore,
+    codeQualityScore = 0,
+    problemSolvingScore = 0,
+    remarks
+  } = payload;
+  const totalScore =
+    innovationScore +
+    uiuxScore +
+    technicalScore +
+    presentationScore +
+    codeQualityScore +
+    problemSolvingScore;
 
   // 5. Create evaluation document
   const evaluation = await evaluationRepository.create({
@@ -131,8 +137,11 @@ export const evaluateSubmission = async (judgeId, judgeRole, submissionId, paylo
     submission: submissionId,
     judge: judgeId,
     innovationScore,
+    uiuxScore,
     technicalScore,
     presentationScore,
+    codeQualityScore,
+    problemSolvingScore,
     remarks,
     totalScore,
     evaluatedAt: new Date()
@@ -142,13 +151,6 @@ export const evaluateSubmission = async (judgeId, judgeRole, submissionId, paylo
   return evaluation;
 };
 
-/**
- * @desc Update evaluation details (assigned Judge owner only)
- * @param {string} evaluationId - Object ID of the evaluation to edit
- * @param {string} judgeId - Object ID of the judge user
- * @param {Object} payload - Updates payload
- * @returns {Promise<Object>} Updated Evaluation document
- */
 export const updateEvaluation = async (evaluationId, judgeId, payload) => {
   // 1. Fetch evaluation details
   const evaluation = await evaluationRepository.findById(evaluationId);
@@ -167,17 +169,31 @@ export const updateEvaluation = async (evaluationId, judgeId, payload) => {
     );
   }
 
+  const hackathonId = evaluation.hackathon._id || evaluation.hackathon;
+  const hackathon = await hackathonRepository.findById(hackathonId);
+  if (hackathon?.evaluationClosed) {
+    throw new AppError(
+      "Evaluation period has closed for this hackathon",
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
   // 3. Recalculate totalScore
   const innovation = payload.innovationScore !== undefined ? payload.innovationScore : evaluation.innovationScore;
+  const uiux = payload.uiuxScore !== undefined ? payload.uiuxScore : (evaluation.uiuxScore || 0);
   const technical = payload.technicalScore !== undefined ? payload.technicalScore : evaluation.technicalScore;
   const presentation = payload.presentationScore !== undefined ? payload.presentationScore : evaluation.presentationScore;
-  const totalScore = innovation + technical + presentation;
+  const codeQuality = payload.codeQualityScore !== undefined ? payload.codeQualityScore : (evaluation.codeQualityScore || 0);
+  const problemSolving = payload.problemSolvingScore !== undefined ? payload.problemSolvingScore : (evaluation.problemSolvingScore || 0);
+  const totalScore = innovation + uiux + technical + presentation + codeQuality + problemSolving;
 
   // 4. Exclude immutable fields
-  const { judge, submission, hackathon, ...cleanPayload } = payload;
+  const { judge, submission, hackathon: h, ...cleanPayload } = payload;
   const updateData = {
     ...cleanPayload,
-    totalScore
+    totalScore,
+    evaluatedAt: new Date()
   };
 
   const updated = await evaluationRepository.update(evaluationId, updateData);
@@ -186,12 +202,6 @@ export const updateEvaluation = async (evaluationId, judgeId, payload) => {
   return updated;
 };
 
-/**
- * @desc Get evaluations scored by the authenticated judge user
- * @param {string} judgeId - Object ID of the judge
- * @param {Object} query - Query parameters (pagination)
- * @returns {Promise<Object>} Evaluations list and pagination metadata
- */
 export const getMyEvaluations = async (judgeId, query) => {
   const page = parseInt(query.page, 10) || 1;
   const limit = parseInt(query.limit, 10) || 10;
@@ -213,14 +223,6 @@ export const getMyEvaluations = async (judgeId, query) => {
   };
 };
 
-/**
- * @desc Get all evaluations under a hackathon (organizer and admin only)
- * @param {string} hackathonId - Object ID of the hackathon
- * @param {string} userId - Object ID of the requesting organizer/admin
- * @param {string} userRole - Role profile of the requesting user
- * @param {Object} query - Query parameters (pagination)
- * @returns {Promise<Object>} Evaluations list sorted by totalScore, and pagination metadata
- */
 export const getOrganizerEvaluations = async (hackathonId, userId, userRole, query) => {
   const hackathon = await hackathonRepository.findById(hackathonId);
   if (!hackathon || hackathon.isDeleted) {

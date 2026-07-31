@@ -1,6 +1,3 @@
-/**
- * @desc Catalog of supported user roles inside the HackVerse platform
- */
 const Roles = {
   ADMIN: "admin",
   ORGANIZER: "organizer",

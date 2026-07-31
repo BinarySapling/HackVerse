@@ -4,9 +4,6 @@ import AppError from '../errors/AppError.js';
 import HttpStatus from '../constants/httpStatus.js';
 import ErrorCodes from '../errors/ErrorCodes.js';
 
-/**
- * @desc Zod validation schema for submitting an evaluation
- */
 export const createEvaluationSchema = z.object({
   innovationScore: z
     .number({
@@ -15,6 +12,13 @@ export const createEvaluationSchema = z.object({
     })
     .min(0, "Innovation score cannot be less than 0")
     .max(10, "Innovation score cannot exceed 10"),
+  uiuxScore: z
+    .number({
+      required_error: "UI/UX score is required",
+      invalid_type_error: "UI/UX score must be a number"
+    })
+    .min(0, "UI/UX score cannot be less than 0")
+    .max(10, "UI/UX score cannot exceed 10"),
   technicalScore: z
     .number({
       required_error: "Technical score is required",
@@ -29,6 +33,20 @@ export const createEvaluationSchema = z.object({
     })
     .min(0, "Presentation score cannot be less than 0")
     .max(10, "Presentation score cannot exceed 10"),
+  codeQualityScore: z
+    .number({
+      required_error: "Code quality score is required",
+      invalid_type_error: "Code quality score must be a number"
+    })
+    .min(0, "Code quality score cannot be less than 0")
+    .max(10, "Code quality score cannot exceed 10"),
+  problemSolvingScore: z
+    .number({
+      required_error: "Problem solving score is required",
+      invalid_type_error: "Problem solving score must be a number"
+    })
+    .min(0, "Problem solving score cannot be less than 0")
+    .max(10, "Problem solving score cannot exceed 10"),
   remarks: z
     .string({ required_error: "Remarks are required" })
     .trim()
@@ -36,14 +54,8 @@ export const createEvaluationSchema = z.object({
     .max(1000, "Remarks cannot exceed 1000 characters")
 });
 
-/**
- * @desc Zod validation schema for editing an evaluation
- */
 export const updateEvaluationSchema = createEvaluationSchema.partial();
 
-/**
- * @desc Express middleware validation for hackathonId path parameter
- */
 export const validateHackathonIdParam = (req, res, next) => {
   const { hackathonId } = req.params;
   if (!mongoose.Types.ObjectId.isValid(hackathonId)) {
@@ -58,9 +70,6 @@ export const validateHackathonIdParam = (req, res, next) => {
   next();
 };
 
-/**
- * @desc Express middleware validation for judgeId path parameter
- */
 export const validateJudgeIdParam = (req, res, next) => {
   const { judgeId } = req.params;
   if (!mongoose.Types.ObjectId.isValid(judgeId)) {
@@ -75,9 +84,6 @@ export const validateJudgeIdParam = (req, res, next) => {
   next();
 };
 
-/**
- * @desc Express middleware validation for submissionId path parameter
- */
 export const validateSubmissionIdParam = (req, res, next) => {
   const { submissionId } = req.params;
   if (!mongoose.Types.ObjectId.isValid(submissionId)) {
@@ -92,9 +98,6 @@ export const validateSubmissionIdParam = (req, res, next) => {
   next();
 };
 
-/**
- * @desc Express middleware validation for evaluationId path parameter
- */
 export const validateEvaluationIdParam = (req, res, next) => {
   const { evaluationId } = req.params;
   if (!mongoose.Types.ObjectId.isValid(evaluationId)) {

@@ -1,49 +1,29 @@
 import jwt from 'jsonwebtoken';
-import jwtConfig from '../config/jwt.js';
+import config from '../config/env.js';
 
-/**
- * @desc Sign a new JSON Web Token access token (short-lived)
- * @param {Object} payload - Token payload (e.g. { id, role })
- * @returns {string} Signed JWT token string
- */
 export const generateAccessToken = (payload) => {
-  return jwt.sign(payload, jwtConfig.access.secret, {
-    expiresIn: jwtConfig.access.expiresIn
+  return jwt.sign(payload, config.jwtAccessSecret, {
+    expiresIn: config.jwtAccessExpire,
   });
 };
 
-/**
- * @desc Sign a new JSON Web Token refresh token (long-lived)
- * @param {Object} payload - Token payload (e.g. { id })
- * @returns {string} Signed JWT token string
- */
 export const generateRefreshToken = (payload) => {
-  return jwt.sign(payload, jwtConfig.refresh.secret, {
-    expiresIn: jwtConfig.refresh.expiresIn
+  return jwt.sign(payload, config.jwtRefreshSecret, {
+    expiresIn: config.jwtRefreshExpire,
   });
 };
 
-/**
- * @desc Validate and decode a signed JSON Web Token access token
- * @param {string} token - Access token string
- * @returns {Object} Decoded payload details
- */
 export const verifyAccessToken = (token) => {
-  return jwt.verify(token, jwtConfig.access.secret);
+  return jwt.verify(token, config.jwtAccessSecret);
 };
 
-/**
- * @desc Validate and decode a signed JSON Web Token refresh token
- * @param {string} token - Refresh token string
- * @returns {Object} Decoded payload details
- */
 export const verifyRefreshToken = (token) => {
-  return jwt.verify(token, jwtConfig.refresh.secret);
+  return jwt.verify(token, config.jwtRefreshSecret);
 };
 
 export default {
   generateAccessToken,
   generateRefreshToken,
   verifyAccessToken,
-  verifyRefreshToken
+  verifyRefreshToken,
 };

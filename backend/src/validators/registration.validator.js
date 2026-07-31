@@ -3,9 +3,6 @@ import AppError from '../errors/AppError.js';
 import HttpStatus from '../constants/httpStatus.js';
 import ErrorCodes from '../errors/ErrorCodes.js';
 
-/**
- * @desc Express middleware to validate hackathonId in path parameters
- */
 export const validateHackathonIdParam = (req, res, next) => {
   const { hackathonId } = req.params;
   if (!mongoose.Types.ObjectId.isValid(hackathonId)) {
@@ -20,9 +17,6 @@ export const validateHackathonIdParam = (req, res, next) => {
   next();
 };
 
-/**
- * @desc Express middleware to validate registration id in path parameters
- */
 export const validateRegistrationIdParam = (req, res, next) => {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id)) {

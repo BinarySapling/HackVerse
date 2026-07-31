@@ -3,11 +3,6 @@ import ApiResponse from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import HttpStatus from '../constants/httpStatus.js';
 
-/**
- * @desc Handle HTTP GET fetch public leaderboard
- * @route GET /api/v1/hackathons/:hackathonId/leaderboard
- * @access Protected (Authenticated users)
- */
 export const getLeaderboard = asyncHandler(async (req, res) => {
   const { hackathonId } = req.params;
   const userId = req.user.id;
@@ -19,15 +14,14 @@ export const getLeaderboard = asyncHandler(async (req, res) => {
     HttpStatus.OK,
     "Leaderboard fetched successfully",
     result.leaderboard,
-    result.pagination
+    {
+      ...result.pagination,
+      evaluationClosed: result.evaluationClosed,
+      winnersAnnounced: result.winnersAnnounced
+    }
   );
 });
 
-/**
- * @desc Handle HTTP GET fetch detailed organizer results
- * @route GET /api/v1/hackathons/:hackathonId/results
- * @access Protected (Organizer/Admin only)
- */
 export const getOrganizerResults = asyncHandler(async (req, res) => {
   const { hackathonId } = req.params;
   const userId = req.user.id;
@@ -40,15 +34,14 @@ export const getOrganizerResults = asyncHandler(async (req, res) => {
     HttpStatus.OK,
     "Organizer results fetched successfully",
     result.results,
-    result.pagination
+    {
+      ...result.pagination,
+      evaluationClosed: result.evaluationClosed,
+      winnersAnnounced: result.winnersAnnounced
+    }
   );
 });
 
-/**
- * @desc Handle HTTP GET fetch specific team result for the leader
- * @route GET /api/v1/hackathons/:hackathonId/my-result
- * @access Protected (Leader only)
- */
 export const getMyResult = asyncHandler(async (req, res) => {
   const { hackathonId } = req.params;
   const userId = req.user.id;
@@ -63,8 +56,40 @@ export const getMyResult = asyncHandler(async (req, res) => {
   );
 });
 
+export const closeEvaluation = asyncHandler(async (req, res) => {
+  const result = await leaderboardService.closeEvaluation(
+    req.user.id,
+    req.user.role,
+    req.params.hackathonId
+  );
+
+  return ApiResponse.success(
+    res,
+    HttpStatus.OK,
+    'Evaluation closed successfully',
+    result
+  );
+});
+
+export const announceWinners = asyncHandler(async (req, res) => {
+  const result = await leaderboardService.announceWinners(
+    req.user.id,
+    req.user.role,
+    req.params.hackathonId
+  );
+
+  return ApiResponse.success(
+    res,
+    HttpStatus.OK,
+    'Winners announced successfully',
+    result
+  );
+});
+
 export default {
   getLeaderboard,
   getOrganizerResults,
-  getMyResult
+  getMyResult,
+  closeEvaluation,
+  announceWinners
 };

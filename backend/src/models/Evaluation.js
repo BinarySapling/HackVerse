@@ -1,8 +1,5 @@
 import mongoose from 'mongoose';
 
-/**
- * @desc Mongoose Database Schema for storing project scoring evaluations by assigned judges
- */
 const evaluationSchema = new mongoose.Schema(
   {
     hackathon: {
@@ -26,6 +23,13 @@ const evaluationSchema = new mongoose.Schema(
       min: [0, 'Innovation score cannot be less than 0'],
       max: [10, 'Innovation score cannot exceed 10']
     },
+    uiuxScore: {
+      type: Number,
+      required: [true, 'UI/UX score is required'],
+      min: [0, 'UI/UX score cannot be less than 0'],
+      max: [10, 'UI/UX score cannot exceed 10'],
+      default: 0
+    },
     technicalScore: {
       type: Number,
       required: [true, 'Technical score is required'],
@@ -37,6 +41,20 @@ const evaluationSchema = new mongoose.Schema(
       required: [true, 'Presentation score is required'],
       min: [0, 'Presentation score cannot be less than 0'],
       max: [10, 'Presentation score cannot exceed 10']
+    },
+    codeQualityScore: {
+      type: Number,
+      required: [true, 'Code quality score is required'],
+      min: [0, 'Code quality score cannot be less than 0'],
+      max: [10, 'Code quality score cannot exceed 10'],
+      default: 0
+    },
+    problemSolvingScore: {
+      type: Number,
+      required: [true, 'Problem solving score is required'],
+      min: [0, 'Problem solving score cannot be less than 0'],
+      max: [10, 'Problem solving score cannot exceed 10'],
+      default: 0
     },
     remarks: {
       type: String,

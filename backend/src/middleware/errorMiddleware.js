@@ -5,9 +5,6 @@ import HttpStatus from '../constants/httpStatus.js';
 import { ErrorMessages } from '../constants/messages.js';
 import ErrorCodes from '../errors/ErrorCodes.js';
 
-/**
- * @desc Centralized global error handling middleware
- */
 export const errorHandler = (err, req, res, next) => {
   let statusCode = err.statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
   let message = err.message || ErrorMessages.INTERNAL_SERVER_ERROR;

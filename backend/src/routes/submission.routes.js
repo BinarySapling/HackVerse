@@ -4,7 +4,8 @@ import {
   getMySubmission,
   updateSubmission,
   deleteSubmission,
-  getOrganizerSubmissions
+  getOrganizerSubmissions,
+  getJudgeSubmissions
 } from '../controllers/submission.controller.js';
 import authenticate from '../middleware/authenticate.js';
 import authorize from '../middleware/authorize.js';
@@ -43,6 +44,14 @@ router.get(
   authorize(RolePolicies.ORGANIZER_OR_ADMIN),
   validateHackathonIdParam,
   getOrganizerSubmissions
+);
+
+router.get(
+  '/hackathons/:hackathonId/judge-submissions',
+  authenticate,
+  authorize(RolePolicies.JUDGE_ONLY),
+  validateHackathonIdParam,
+  getJudgeSubmissions
 );
 
 // Routes tied to a specific submission ID

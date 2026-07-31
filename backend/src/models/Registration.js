@@ -1,8 +1,5 @@
 import mongoose from 'mongoose';
 
-/**
- * @desc Mongoose Schema for Participant Hackathon Registration tracking
- */
 const registrationSchema = new mongoose.Schema(
   {
     user: {

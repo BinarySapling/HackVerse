@@ -4,13 +4,6 @@ import HttpStatus from '../constants/httpStatus.js';
 import ErrorCodes from '../errors/ErrorCodes.js';
 import logger from '../config/logger.js';
 
-/**
- * @desc Higher-order function to create custom rate limiters throwing AppError
- * @param {number} windowMinutes - Time window in minutes
- * @param {number} maxRequests - Max requests allowed per IP inside the window
- * @param {string} customMessage - Custom error message for blocked clients
- * @returns {Function} Express rate limit middleware
- */
 export const createLimiter = (windowMinutes, maxRequests, customMessage) => {
   return rateLimit({
     windowMs: windowMinutes * 60 * 1000,

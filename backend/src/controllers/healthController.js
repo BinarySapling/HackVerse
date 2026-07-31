@@ -6,11 +6,6 @@ import asyncHandler from '../utils/asyncHandler.js';
 import HttpStatus from '../constants/httpStatus.js';
 import { SuccessMessages } from '../constants/messages.js';
 
-/**
- * @desc Get application health and status including database state
- * @route GET /health
- * @access Public
- */
 export const getHealth = asyncHandler(async (req, res) => {
   logger.info('Performing health check request');
 

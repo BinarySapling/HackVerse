@@ -1,8 +1,5 @@
 import { z } from 'zod';
 
-/**
- * @desc Zod validation schema for user registration requests (Signup)
- */
 export const signupSchema = z.object({
   firstName: z
     .string({ required_error: "First name is required" })
@@ -35,15 +32,12 @@ export const signupSchema = z.object({
       message: "Password must contain at least one special character"
     }),
   role: z
-    .enum(["participant"], {
-      message: "Public signup is restricted to participant accounts"
+    .enum(["participant", "organizer"], {
+      message: "Public signup is restricted to participant and organizer accounts"
     })
     .optional()
 });
 
-/**
- * @desc Zod validation schema for user authentication requests (Login)
- */
 export const loginSchema = z.object({
   email: z
     .string({ required_error: "Email is required" })

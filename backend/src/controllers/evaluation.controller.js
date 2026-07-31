@@ -3,11 +3,6 @@ import ApiResponse from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import HttpStatus from '../constants/httpStatus.js';
 
-/**
- * @desc Handle HTTP PATCH assign judge to a hackathon
- * @route PATCH /api/v1/hackathons/:hackathonId/judges/:judgeId
- * @access Protected (Organizer/Admin only)
- */
 export const assignJudge = asyncHandler(async (req, res) => {
   const { hackathonId, judgeId } = req.params;
   const organizerId = req.user.id;
@@ -22,11 +17,6 @@ export const assignJudge = asyncHandler(async (req, res) => {
   );
 });
 
-/**
- * @desc Handle HTTP POST evaluate submission
- * @route POST /api/v1/submissions/:submissionId/evaluate
- * @access Protected (Judge only)
- */
 export const evaluateSubmission = asyncHandler(async (req, res) => {
   const { submissionId } = req.params;
   const judgeId = req.user.id;
@@ -42,11 +32,6 @@ export const evaluateSubmission = asyncHandler(async (req, res) => {
   );
 });
 
-/**
- * @desc Handle HTTP PATCH update evaluation values
- * @route PATCH /api/v1/evaluations/:evaluationId
- * @access Protected (Judge owner only)
- */
 export const updateEvaluation = asyncHandler(async (req, res) => {
   const { evaluationId } = req.params;
   const judgeId = req.user.id;
@@ -61,11 +46,6 @@ export const updateEvaluation = asyncHandler(async (req, res) => {
   );
 });
 
-/**
- * @desc Handle HTTP GET fetch judge's own evaluations
- * @route GET /api/v1/evaluations/me
- * @access Protected (Judge only)
- */
 export const getMyEvaluations = asyncHandler(async (req, res) => {
   const judgeId = req.user.id;
 
@@ -80,11 +60,6 @@ export const getMyEvaluations = asyncHandler(async (req, res) => {
   );
 });
 
-/**
- * @desc Handle HTTP GET fetch submissions scoring list for organizer
- * @route GET /api/v1/hackathons/:hackathonId/evaluations
- * @access Protected (Organizer/Admin only)
- */
 export const getOrganizerEvaluations = asyncHandler(async (req, res) => {
   const { hackathonId } = req.params;
   const userId = req.user.id;

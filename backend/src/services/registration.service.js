@@ -8,13 +8,6 @@ import Roles from '../constants/roles.js';
 import authRepository from '../repositories/auth.repository.js';
 import emailService from './email.service.js';
 
-/**
- * @desc Register a participant for a hackathon
- * @param {string} userId - Object ID of the participant
- * @param {string} userRole - Role of the registering user
- * @param {string} hackathonId - Object ID of the hackathon
- * @returns {Promise<Object>} The registration document
- */
 export const registerForHackathon = async (userId, userRole, hackathonId) => {
   // 1. Enforce participant-only registration rule
   if (userRole !== Roles.PARTICIPANT) {
@@ -56,6 +49,26 @@ export const registerForHackathon = async (userId, userRole, hackathonId) => {
     );
   }
 
+  if (hackathon.status === 'draft' || hackathon.status === 'archived') {
+    throw new AppError(
+      'This hackathon is not open for registration yet',
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
+  if (hackathon.maxTeams) {
+    const Team = (await import('../models/Team.js')).default;
+    const teamCount = await Team.countDocuments({ hackathon: hackathonId, isDeleted: false });
+    if (teamCount >= hackathon.maxTeams) {
+      throw new AppError(
+        'Maximum number of teams has been reached for this hackathon',
+        HttpStatus.BAD_REQUEST,
+        ErrorCodes.VALIDATION_ERROR
+      );
+    }
+  }
+
   // 4. Handle duplicates and potential re-registrations
   const existingRegistration = await registrationRepository.findByUserAndHackathon(userId, hackathonId);
   if (existingRegistration) {
@@ -76,7 +89,7 @@ export const registerForHackathon = async (userId, userRole, hackathonId) => {
 
       try {
         const participant = await authRepository.findUserById(userId);
-        await emailService.sendParticipantConfirmation({
+        void emailService.sendParticipantConfirmation({
           participant,
           hackathon
         });
@@ -104,7 +117,7 @@ export const registerForHackathon = async (userId, userRole, hackathonId) => {
 
   try {
     const participant = await authRepository.findUserById(userId);
-    await emailService.sendParticipantConfirmation({
+    void emailService.sendParticipantConfirmation({
       participant,
       hackathon
     });
@@ -120,12 +133,6 @@ export const registerForHackathon = async (userId, userRole, hackathonId) => {
   return { registration, isReactivated: false };
 };
 
-/**
- * @desc Retrieve paginated registrations matching the logged-in participant
- * @param {string} userId - Object ID of the participant
- * @param {Object} query - Query parameters for pagination
- * @returns {Promise<Object>} Object containing registrations array and pagination metadata
- */
 export const getMyRegistrations = async (userId, query) => {
   const page = parseInt(query.page, 10) || 1;
   const limit = parseInt(query.limit, 10) || 10;
@@ -145,12 +152,6 @@ export const getMyRegistrations = async (userId, query) => {
   };
 };
 
-/**
- * @desc Cancel a participant's registration (soft status switch for auditing/metrics logs)
- * @param {string} registrationId - Object ID of the registration document
- * @param {string} userId - Object ID of the requesting user
- * @returns {Promise<Object>} The updated registration document
- */
 export const cancelRegistration = async (registrationId, userId) => {
   // 1. Fetch registration
   const registration = await registrationRepository.findById(registrationId);
