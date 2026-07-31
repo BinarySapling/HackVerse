@@ -1,119 +1,127 @@
-# HackVerse - Hackathon Management Platform
+# HackVerse
 
-HackVerse is an enterprise-grade platform built to handle the full lifecycle of Hackathons: from registration and team formation to project submissions, judging evaluations, and leaderboards.
+A MERN stack hackathon management platform for college projects.
 
----
+Organizers create hackathons, invite judges, and announce winners.  
+Participants register, form teams, and submit projects.  
+Judges evaluate submissions and scores feed the leaderboard.
 
-## 🚀 Key Features
+## Features
 
-* **Layered Clean Architecture:** Strict separation of routes, validations, controllers, services, repositories, and models.
-* **Secure Session Management:** Token rotation using access tokens (15m) and refresh tokens (30d) stored in HTTP-only cookies.
-* **Cryptographic Hardening:** Refresh tokens are hashed using SHA-256 before database storage to prevent database breach exploits.
-* **Robust Input Validation:** Standardized, type-safe validations using Zod schemas.
-* **Centralized Error System:** Predictable response formats using custom `AppError` handlers that mask stack traces in production.
-* **Auditability:** Correlation ID tracking (`X-Request-Id`) across files and Winston logging.
-* **Lifecycle Management:** Database model structure prepared for Hackathon CRUD and team formations.
+- JWT auth with role-based access (organizer / judge / participant / admin)
+- Hackathon create, publish, registration windows
+- Judge invitations (existing users + new registration links)
+- Team create + email invitations
+- Project submissions (GitHub URL, demo links)
+- Rubric-based evaluation and leaderboard
+- Winner announcement with email + in-app notifications
+- Role dashboards with basic stats
 
----
+## Tech Stack
 
-## 📂 Folder Structure
+- **Frontend:** React (Vite) + Tailwind CSS — deploy on Vercel
+- **Backend:** Node.js + Express — deploy on Render
+- **Database:** MongoDB Atlas
 
-```text
-hackverse/
-├── backend/
-│   ├── src/
-│   │   ├── config/             # Settings drivers (env, logger, jwt)
-│   │   ├── constants/          # Static frozen tables (httpStatus, roles, hackathonStatus)
-│   │   ├── controllers/        # Express handlers parsing HTTP payloads
-│   │   ├── database/           # Mongoose driver and close routines
-│   │   ├── errors/             # Custom exceptions catalog (AppError, ErrorCodes)
-│   │   ├── middleware/         # Security headers, rate limiters, auth/RBAC guards
-│   │   ├── models/             # Schema definitions and indexes declarations
-│   │   ├── repositories/       # Isolated database query layer
-│   │   ├── routes/             # API routing mappings
-│   │   ├── services/           # Hashing, token rotation, and business workflows
-│   │   ├── utils/              # Resusable helper methods (cookie, jwt, asyncHandler)
-│   │   └── validators/         # Zod schemas mapping
-│   ├── server.js               # Startup bootstrapper
-│   └── package.json            # Node dependencies
-├── docker/                     # Docker containers configs
-├── docs/                       # Project specifications and guidelines
-├── frontend/                   # UI client source code
-├── nginx/                      # Proxy routing profiles
-└── scripts/                    # Helper setup files
-```
+## Setup (Local)
 
----
+### 1. Backend
 
-## 🛠️ Installation & Setup
-
-### Prerequisites
-* Node.js (v22+)
-* MongoDB instance (v6+)
-
-### Installation
-1. Clone the repository and navigate to the backend folder:
-   ```bash
-   cd hackverse/backend
-   ```
-2. Install npm dependencies:
-   ```bash
-   npm install
-   ```
-
-### Environment Configuration
-Create a `.env` file in the `backend` root directory using the variables template:
-```env
-PORT=5000
-NODE_ENV=development
-
-MONGO_URI=mongodb://127.0.0.1:27017/HacVerse
-
-JWT_ACCESS_SECRET=your_access_secret_key_here
-JWT_ACCESS_EXPIRES_IN=15m
-
-JWT_REFRESH_SECRET=your_refresh_secret_key_here
-JWT_REFRESH_EXPIRES_IN=30d
-
-ALLOWED_ORIGINS=http://localhost:3000
-```
-
-### Start Development Server
 ```bash
+cd backend
+cp .env.example .env
+npm install
 npm run dev
 ```
 
----
+Fill in `.env` with your MongoDB URI, JWT secrets, and optional SMTP settings.
 
-## 🔑 Authentication Flow
+### 2. Frontend
 
-### Session Control Sequence
-```text
-  [Signup] ────► [Login] ────► [Authorize access token] ────► [Refresh token rotation] ───► [Logout]
-  Registers      Issues        Authorization: Bearer          Cookie: refreshToken       Clears database
-  clean user     cookie &      header validated by            validated, rotated to      hash and client
-  record         access token  middleware guards              new cookie and token       cookie
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
 ```
 
----
+Open http://localhost:3000
 
-## 📋 API Overview
+### Backend with Docker (optional)
 
-All routes are prefixed with `/api/v1`.
+```bash
+cd backend
+docker build -t hackverse-backend .
+docker run -p 5000:5000 --env-file .env hackverse-backend
+```
 
-| Method | Endpoint | Authorization | Description |
-| :--- | :--- | :--- | :--- |
-| **POST** | `/auth/signup` | Public | Register participant user. |
-| **POST** | `/auth/login` | Public | Authenticate user, return JWT access token, and set refresh cookie. |
-| **POST** | `/auth/refresh` | Public | Rotate refresh session cookies and issue a new access token. |
-| **POST** | `/auth/logout` | Public | Invalidate database session and clear refresh cookies. |
-| **GET** | `/auth/me` | Protected | Fetch current user details. |
-| **GET** | `/health` | Public | Check database connectivity and API status. |
+## Environment Variables
 
----
+### Backend (`backend/.env`)
 
-## 🗺️ Future Roadmap
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `MONGO_URI` | Yes | MongoDB / Atlas connection string |
+| `JWT_ACCESS_SECRET` | Yes | Access token secret |
+| `JWT_REFRESH_SECRET` | Yes | Refresh token secret |
+| `ALLOWED_ORIGINS` | Yes (prod) | Frontend URLs, comma-separated |
+| `FRONTEND_URL` | Yes (prod) | Used in invitation email links |
+| `PORT` | No | Default `5000` |
+| `SMTP_*` / `MAIL_*` | No | Emails skipped if incomplete |
 
-* **Phase 3:** Create Hackathon registration, invitation workflows, and admin dashboards.
-* **Phase 4:** Build submissions module, judging scoring rubrics, and automated scoreboard calculations.
-* **Phase 5:** Integrate caching (Redis), Docker orchestration, and CI/CD pipelines.
+### Frontend (`frontend/.env`)
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `VITE_API_URL` | Yes (prod) | Example: `https://your-api.onrender.com/api/v1` |
+
+## Deploy
+
+### Backend → Render
+
+1. New Web Service from this repo (`backend` root).
+2. Build: `npm install`
+3. Start: `npm start`
+4. Add env vars from `.env.example` (use Atlas URI + strong JWT secrets).
+5. Set `ALLOWED_ORIGINS` to your Vercel URL and `FRONTEND_URL` to the same.
+
+### Frontend → Vercel
+
+1. Import the repo, set root to `frontend`.
+2. Add `VITE_API_URL=https://<your-render-service>.onrender.com/api/v1`
+3. Deploy. `vercel.json` handles SPA routing.
+
+## API
+
+All APIs are under `/api/v1`.
+
+Health check: `GET /health`
+
+## Tests
+
+```bash
+cd backend
+node test_full_flow.js
+```
+
+Requires the backend running on port 5000 and a local/Atlas MongoDB.
+
+## Project Structure
+
+```text
+hackverse/
+├── backend/          # Express API
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── services/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   └── ...
+│   └── server.js
+├── frontend/         # React client
+│   └── src/
+│       ├── pages/
+│       ├── components/
+│       └── ...
+└── docs/postman/     # Optional Postman collection
+```

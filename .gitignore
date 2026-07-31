@@ -1,34 +1,20 @@
 # Dependencies
 node_modules/
-**/node_modules/
 
-# Environment files
+# Environment
 .env
 .env.*
 !.env.example
-backend/.env
-backend/.env.*
-!backend/.env.example
-frontend/.env
-frontend/.env.*
-!frontend/.env.example
+!**/.env.example
 
-# Logs
+# Logs / coverage / builds
 *.log
 logs/
-backend/src/logs/*
-!backend/src/logs/.gitkeep
-
-# Build output
+coverage/
 dist/
 build/
 frontend/dist/
 
-# Uploaded/generated local files
-backend/src/uploads/*
-!backend/src/uploads/.gitkeep
-coverage/
-
-# OS files
+# OS
 .DS_Store
 Thumbs.db
