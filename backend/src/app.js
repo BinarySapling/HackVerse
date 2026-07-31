@@ -34,16 +34,27 @@ if (config.trustProxy) {
 }
 
 app.use(requestIdMiddleware);
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 
-// Allow listed frontend URLs (Vercel / localhost). Reflect request origin when "*" is set.
-const corsOrigin = config.allowedOrigins.includes('*')
-  ? true
-  : config.allowedOrigins;
+// Allow configured frontends. Use "*" (or leave unset in Azure) to allow any origin.
+const allowAll =
+  !process.env.ALLOWED_ORIGINS ||
+  config.allowedOrigins.includes('*');
 
 app.use(
   cors({
-    origin: corsOrigin,
+    origin: allowAll
+      ? true
+      : (origin, callback) => {
+          if (!origin || config.allowedOrigins.includes(origin)) {
+            return callback(null, true);
+          }
+          return callback(null, false);
+        },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
     credentials: true,
