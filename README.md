@@ -103,21 +103,41 @@ The backend uses a layered architecture: **Routes** define endpoints, **Controll
 
 ## Tech Stack
 
-| Layer         | Technology                                           |
-|---------------|------------------------------------------------------|
-| Frontend      | React 18, Vite, Tailwind CSS, Framer Motion          |
-| Routing       | React Router v6                                      |
-| Forms         | React Hook Form + Zod validation                     |
-| HTTP Client   | Axios                                                |
-| Backend       | Node.js, Express 4                                   |
-| Database      | MongoDB (Mongoose ODM)                               |
-| Caching / OTP | Upstash Redis (REST API)                             |
-| Auth          | JSON Web Tokens (access + refresh), bcrypt           |
-| Email         | Nodemailer (SMTP)                                    |
-| File Uploads  | Multer                                               |
-| Security      | Helmet, CORS, express-rate-limit, Zod input schemas  |
-| Logging       | Winston + Morgan                                     |
-| Deployment    | Vercel (frontend), Render or Azure (backend), Docker |
+### Frontend
+![React](https://img.shields.io/badge/React_18-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)
+![React Router](https://img.shields.io/badge/React_Router_v6-CA4245?style=for-the-badge&logo=reactrouter&logoColor=white)
+![React Hook Form](https://img.shields.io/badge/React_Hook_Form-EC5990?style=for-the-badge&logo=reacthookform&logoColor=white)
+![Zod](https://img.shields.io/badge/Zod-3E67B1?style=for-the-badge&logo=zod&logoColor=white)
+![Axios](https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white)
+
+### Backend
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express_4-000000?style=for-the-badge&logo=express&logoColor=white)
+![Nodemailer](https://img.shields.io/badge/Nodemailer-22B573?style=for-the-badge&logo=minutemailer&logoColor=white)
+![Multer](https://img.shields.io/badge/Multer-FF6600?style=for-the-badge&logo=files&logoColor=white)
+
+### Database & Caching
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+![Mongoose](https://img.shields.io/badge/Mongoose_ODM-880000?style=for-the-badge&logo=mongoose&logoColor=white)
+![Redis](https://img.shields.io/badge/Upstash_Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+
+### Auth & Security
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![Helmet](https://img.shields.io/badge/Helmet-eee?style=for-the-badge&logo=helmet&logoColor=black)
+![Zod Validation](https://img.shields.io/badge/Zod_Validation-3E67B1?style=for-the-badge&logo=zod&logoColor=white)
+
+### Logging
+![Winston](https://img.shields.io/badge/Winston-231F20?style=for-the-badge&logo=winston&logoColor=white)
+![Morgan](https://img.shields.io/badge/Morgan-333333?style=for-the-badge&logo=express&logoColor=white)
+
+### DevOps & Deployment
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=black)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
 
 ---
 
