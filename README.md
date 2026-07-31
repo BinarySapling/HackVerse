@@ -86,28 +86,25 @@ docker run -p 5000:5000 --env-file .env hackverse-backend
 
 ### Backend → Azure Container Apps + GitHub Actions CD
 
-1. Add GitHub repo secrets (`Settings` → `Secrets and variables` → `Actions`):
+No Cloud Shell needed.
+
+1. GitHub → **Settings** → **Secrets and variables** → **Actions** → add:
 
 | Secret | Where to get it |
 | --- | --- |
 | `ACR_USERNAME` | ACR → Access keys → Username |
 | `ACR_PASSWORD` | ACR → Access keys → Password |
-| `AZURE_CREDENTIALS` | see command below |
 
-2. Create Azure credentials (Azure Cloud Shell):
+2. Point Container App at tag `latest` (once):  
+   Portal → **hackverse-api** → **Edit and deploy** → image tag **`latest`** → deploy
 
-```bash
-az ad sp create-for-rbac \
-  --name "hackverse-github" \
-  --role contributor \
-  --scopes /subscriptions/<YOUR_SUBSCRIPTION_ID>/resourceGroups/hackverse-rg \
-  --sdk-auth
-```
+3. Enable auto-pull of new images (once):  
+   Portal → **hackverse-api** → search **Continuous deployment** / **Deployment**  
+   - Enable continuous deployment from registry if shown  
+   - Or after each GitHub push, use **Edit and deploy** → save again (forces pull of `latest`)
 
-Copy the full JSON output into GitHub secret `AZURE_CREDENTIALS`.
-
-3. Push to `production` (or run the workflow manually).  
-   Workflow file: `.github/workflows/deploy-backend.yml`
+4. Push to `production` (or run workflow **Deploy Backend** manually).  
+   Workflow: `.github/workflows/deploy-backend.yml`
 
 ### Backend → Render
 
