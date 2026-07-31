@@ -22,16 +22,33 @@ export const findByMember = async (memberId, hackathonId) => {
 };
 
 export const findByHackathon = async (hackathonId) => {
-  return Team.find({ hackathon: hackathonId, isDeleted: false });
+  return Team.find({ hackathon: hackathonId, isDeleted: false })
+    .populate('leader', 'firstName lastName email avatar')
+    .populate('members', 'firstName lastName email avatar')
+    .sort({ createdAt: -1 });
 };
 
-export const existsByNameInHackathon = async (name, hackathonId) => {
-  const count = await Team.countDocuments({
+export const existsByNameInHackathon = async (name, hackathonId, excludeTeamId = null) => {
+  const filter = {
     name: { $regex: new RegExp(`^${name.trim()}$`, 'i') },
     hackathon: hackathonId,
-    isDeleted: false
-  });
+    isDeleted: false,
+  };
+  if (excludeTeamId) {
+    filter._id = { $ne: excludeTeamId };
+  }
+  const count = await Team.countDocuments(filter);
   return count > 0;
+};
+
+export const updateName = async (teamId, name) => {
+  return Team.findByIdAndUpdate(
+    teamId,
+    { name },
+    { returnDocument: 'after', runValidators: true }
+  )
+    .populate('leader', 'firstName lastName email avatar')
+    .populate('members', 'firstName lastName email avatar');
 };
 
 export const addMember = async (teamId, memberId) => {
@@ -62,6 +79,16 @@ export const softDelete = async (teamId) => {
   );
 };
 
+export const transferLeadership = async (teamId, newLeaderId) => {
+  return Team.findByIdAndUpdate(
+    teamId,
+    { leader: newLeaderId },
+    { returnDocument: 'after', runValidators: true }
+  )
+    .populate('leader', 'firstName lastName email avatar')
+    .populate('members', 'firstName lastName email avatar');
+};
+
 export default {
   create,
   findById,
@@ -69,7 +96,9 @@ export default {
   findByMember,
   findByHackathon,
   existsByNameInHackathon,
+  updateName,
   addMember,
   removeMember,
-  softDelete
+  softDelete,
+  transferLeadership,
 };

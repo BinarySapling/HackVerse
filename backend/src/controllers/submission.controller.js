@@ -7,7 +7,12 @@ export const createSubmission = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { hackathonId } = req.params;
 
-  const submission = await submissionService.createSubmission(userId, hackathonId, req.body);
+  const submission = await submissionService.createSubmission(
+    userId,
+    hackathonId,
+    req.body,
+    req.files
+  );
 
   return ApiResponse.success(
     res,
@@ -35,7 +40,12 @@ export const updateSubmission = asyncHandler(async (req, res) => {
   const { submissionId } = req.params;
   const userId = req.user.id;
 
-  const updatedSubmission = await submissionService.updateSubmission(submissionId, userId, req.body);
+  const updatedSubmission = await submissionService.updateSubmission(
+    submissionId,
+    userId,
+    req.body,
+    req.files
+  );
 
   return ApiResponse.success(
     res,
@@ -75,6 +85,26 @@ export const getOrganizerSubmissions = asyncHandler(async (req, res) => {
   );
 });
 
+export const reviewSubmission = asyncHandler(async (req, res) => {
+  const { submissionId } = req.params;
+  const userId = req.user.id;
+  const userRole = req.user.role;
+
+  const submission = await submissionService.reviewSubmission(
+    submissionId,
+    userId,
+    userRole,
+    req.body.status
+  );
+
+  return ApiResponse.success(
+    res,
+    HttpStatus.OK,
+    'Submission status updated successfully',
+    submission
+  );
+});
+
 export const getJudgeSubmissions = asyncHandler(async (req, res) => {
   const result = await submissionService.getJudgeSubmissions(
     req.params.hackathonId,
@@ -97,5 +127,6 @@ export default {
   updateSubmission,
   deleteSubmission,
   getOrganizerSubmissions,
+  reviewSubmission,
   getJudgeSubmissions
 };

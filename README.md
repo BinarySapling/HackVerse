@@ -1,31 +1,36 @@
 # HackVerse
 
-A MERN stack hackathon management platform for college projects.
+A MERN stack hackathon management platform for college capstone projects.
 
 Organizers create hackathons, invite judges, and announce winners.  
 Participants register, form teams, and submit projects.  
-Judges evaluate submissions and scores feed the leaderboard.
+Judges evaluate submissions and scores feed the public leaderboard.
 
 ## Features
 
-- JWT auth with role-based access (organizer / judge / participant / admin)
-- Hackathon create, publish, registration windows
-- Judge invitations (existing users + new registration links)
+- JWT auth with role-based access (participant / organizer / judge / admin)
+- Email OTP verification at signup (Upstash Redis)
+- Hackathon create, publish, open/close registration
+- Judge invitations (existing users + register-via-link)
 - Team create + email invitations
-- Project submissions (GitHub URL, demo links)
+- Project submissions (GitHub URL, problem/solution, optional file uploads)
 - Rubric-based evaluation and leaderboard
 - Winner announcement with email + in-app notifications
-- Role dashboards with basic stats
+- Role dashboards with stats; admin platform-wide oversight
 
 ## Tech Stack
 
-- **Frontend:** React (Vite) + Tailwind CSS — deploy on Vercel
-- **Backend:** Node.js + Express — deploy on Render
-- **Database:** MongoDB Atlas
+| Layer | Technology |
+| --- | --- |
+| Frontend | React (Vite) + Tailwind CSS |
+| Backend | Node.js + Express |
+| Database | MongoDB Atlas |
+| OTP | Upstash Redis |
+| Deploy | Vercel (frontend), Render or Azure (backend) |
 
-## Setup (Local)
+## Quick Start (Local)
 
-### 1. Backend
+### Backend
 
 ```bash
 cd backend
@@ -34,9 +39,9 @@ npm install
 npm run dev
 ```
 
-Fill in `.env` with your MongoDB URI, JWT secrets, and optional SMTP settings.
+Fill in `.env` with MongoDB URI, JWT secrets, and Upstash Redis keys (required for signup OTP).
 
-### 2. Frontend
+### Frontend
 
 ```bash
 cd frontend
@@ -45,9 +50,9 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000
+Open http://localhost:3000 — API defaults to http://localhost:5000/api/v1.
 
-### Backend with Docker (optional)
+### Docker (backend only)
 
 ```bash
 cd backend
@@ -64,67 +69,45 @@ docker run -p 5000:5000 --env-file .env hackverse-backend
 | `MONGO_URI` | Yes | MongoDB / Atlas connection string |
 | `JWT_ACCESS_SECRET` | Yes | Access token secret |
 | `JWT_REFRESH_SECRET` | Yes | Refresh token secret |
+| `UPSTASH_REDIS_REST_URL` | Yes (signup) | Upstash Redis REST URL |
+| `UPSTASH_REDIS_REST_TOKEN` | Yes (signup) | Upstash Redis REST token |
 | `ALLOWED_ORIGINS` | Yes (prod) | Frontend URLs, comma-separated |
 | `FRONTEND_URL` | Yes (prod) | Used in invitation email links |
 | `PORT` | No | Default `5000` |
 | `SMTP_*` / `MAIL_*` | No | Emails skipped if incomplete |
+| `OTP_TTL_SECONDS` | No | Default `180` (3 min) |
 
 ### Frontend (`frontend/.env`)
 
 | Variable | Required | Notes |
 | --- | --- | --- |
-| `VITE_API_URL` | Yes (prod) | Example: `https://your-api.onrender.com/api/v1` |
+| `VITE_API_URL` | Yes (prod) | e.g. `https://your-api-host.example.com/api/v1` |
 
 ## Deploy
 
-## Deploy
+See **[`docs/DEPLOY.md`](docs/DEPLOY.md)** for full deployment steps (Vercel + Render or Azure).  
+Record your live URLs in **[`docs/SUBMISSION_CHECKLIST.md`](docs/SUBMISSION_CHECKLIST.md)** — do not submit placeholder links.
 
-### Frontend → Vercel (already set up)
-- Connect the GitHub repo, root = `frontend`
-- Set `VITE_API_URL` to your Azure API URL + `/api/v1`
-- Every push to `production` / `main` redeploys automatically
+## Documentation (Capstone §28)
 
-### Backend → Azure Container Apps + GitHub Actions CD
-
-No Cloud Shell needed.
-
-1. GitHub → **Settings** → **Secrets and variables** → **Actions** → add:
-
-| Secret | Where to get it |
+| Document | Description |
 | --- | --- |
-| `ACR_USERNAME` | ACR → Access keys → Username |
-| `ACR_PASSWORD` | ACR → Access keys → Password |
+| [`docs/PROJECT_REPORT.md`](docs/PROJECT_REPORT.md) | Structured project report |
+| [`docs/SCHEMA.md`](docs/SCHEMA.md) | Database schema and ERD |
+| [`docs/API.md`](docs/API.md) | REST API reference |
+| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Deployment guide |
+| [`docs/SCREENSHOTS.md`](docs/SCREENSHOTS.md) | Screenshot capture checklist |
+| [`docs/SUBMISSION_CHECKLIST.md`](docs/SUBMISSION_CHECKLIST.md) | What's done vs manual tasks |
+| [`docs/postman/`](docs/postman/) | Postman collection + environment |
 
-2. Point Container App at tag `latest` (once):  
-   Portal → **hackverse-api** → **Edit and deploy** → image tag **`latest`** → deploy
-
-3. Enable auto-pull of new images (once):  
-   Portal → **hackverse-api** → search **Continuous deployment** / **Deployment**  
-   - Enable continuous deployment from registry if shown  
-   - Or after each GitHub push, use **Edit and deploy** → save again (forces pull of `latest`)
-
-4. Push to `production` (or run workflow **Deploy Backend** manually).  
-   Workflow: `.github/workflows/deploy-backend.yml`
-
-### Backend → Render
-
-1. New Web Service from this repo (`backend` root).
-2. Build: `npm install`
-3. Start: `npm start`
-4. Add env vars from `.env.example` (use Atlas URI + strong JWT secrets).
-5. Set `ALLOWED_ORIGINS` to your Vercel URL and `FRONTEND_URL` to the same.
-
-### Frontend → Vercel
-
-1. Import the repo, set root to `frontend`.
-2. Add `VITE_API_URL=https://<your-render-service>.onrender.com/api/v1`
-3. Deploy. `vercel.json` handles SPA routing.
+**Optional:** A short PowerPoint (10–15 slides) summarizing problem, architecture, demo screens, and conclusion — see outline in `docs/SUBMISSION_CHECKLIST.md` if your college requires it.
 
 ## API
 
-All APIs are under `/api/v1`.
-
-Health check: `GET /health`
+- Base path: `/api/v1`
+- Health check: `GET /health`
+- Full reference: [`docs/API.md`](docs/API.md)
+- Postman: import [`docs/postman/hackverse_collection.json`](docs/postman/hackverse_collection.json)
 
 ## Tests
 
@@ -133,13 +116,13 @@ cd backend
 node test_full_flow.js
 ```
 
-Requires the backend running on port 5000 and a local/Atlas MongoDB.
+Requires the backend on port 5000 and a reachable MongoDB instance.
 
 ## Project Structure
 
 ```text
-hackverse/
-├── backend/          # Express API
+HacKVerse/
+├── backend/              # Express API
 │   ├── src/
 │   │   ├── controllers/
 │   │   ├── services/
@@ -147,10 +130,22 @@ hackverse/
 │   │   ├── routes/
 │   │   └── ...
 │   └── server.js
-├── frontend/         # React client
+├── frontend/             # React client
 │   └── src/
 │       ├── pages/
 │       ├── components/
-│       └── ...
-└── docs/postman/     # Optional Postman collection
+│       └── routes/
+└── docs/                 # Capstone submission docs
+    ├── API.md
+    ├── SCHEMA.md
+    ├── PROJECT_REPORT.md
+    ├── DEPLOY.md
+    ├── SCREENSHOTS.md
+    ├── SUBMISSION_CHECKLIST.md
+    ├── postman/
+    └── screenshots/      # Add captured PNGs here
 ```
+
+## License
+
+Academic / educational use — see your institution's guidelines.

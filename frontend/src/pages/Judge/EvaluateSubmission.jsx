@@ -1,33 +1,61 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import api from '../../config/axios';
 import { evaluationSchema } from '../../validations/evaluation';
-import Card from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
 import Textarea from '../../components/ui/Textarea';
 import Button from '../../components/ui/Button';
 import Loader from '../../components/ui/Loader';
-import { getApiList } from '../../utils/apiResponse';
+import { getApiData, getApiList } from '../../utils/apiResponse';
+import {
+  buildScoreFieldsFromCriteria,
+  computeRawTotal,
+  computeWeightedTotal,
+  DEFAULT_SCORE_FIELDS,
+  hasWeightedCriteria,
+} from '../../utils/judgingCriteria';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Save } from 'lucide-react';
 
-const scoreFields = [
-  { id: 'innovationScore', label: 'Innovation' },
-  { id: 'uiuxScore', label: 'UI/UX' },
-  { id: 'technicalScore', label: 'Technical Complexity' },
-  { id: 'presentationScore', label: 'Presentation' },
-  { id: 'codeQualityScore', label: 'Code Quality' },
-  { id: 'problemSolvingScore', label: 'Problem Solving' },
-];
+const resolveHackathonForSubmission = async (submissionId, existingEvaluation, userId) => {
+  if (existingEvaluation?.hackathon) {
+    const hackathonId = existingEvaluation.hackathon._id || existingEvaluation.hackathon;
+    const response = await api.get(`/hackathons/${hackathonId}`);
+    return getApiData(response);
+  }
+
+  const response = await api.get('/hackathons');
+  const assigned = getApiList(response).filter(
+    (hackathon) => hackathon.judges?.some((judge) => (judge._id || judge) === userId)
+  );
+
+  for (const hackathon of assigned) {
+    try {
+      const subRes = await api.get(`/hackathons/${hackathon._id}/judge-submissions`);
+      const submissions = getApiList(subRes);
+      if (submissions.some((submission) => submission._id === submissionId)) {
+        const detailRes = await api.get(`/hackathons/${hackathon._id}`);
+        return getApiData(detailRes);
+      }
+    } catch {
+      // Judge may not have access to this hackathon's submissions.
+    }
+  }
+
+  return null;
+};
 
 const EvaluateSubmission = () => {
   const { submissionId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingEvaluation, setExistingEvaluation] = useState(null);
+  const [hackathon, setHackathon] = useState(null);
 
   const {
     register,
@@ -48,8 +76,20 @@ const EvaluateSubmission = () => {
     },
   });
 
+  const scoreFields = useMemo(
+    () => buildScoreFieldsFromCriteria(hackathon?.judgingCriteria),
+    [hackathon?.judgingCriteria]
+  );
+  const hiddenScoreFields = useMemo(
+    () => DEFAULT_SCORE_FIELDS.filter((field) => !scoreFields.some((shown) => shown.id === field.id)),
+    [scoreFields]
+  );
+
   const values = watch();
-  const totalScore = scoreFields.reduce((sum, field) => sum + (Number(values[field.id]) || 0), 0);
+  const rawTotal = computeRawTotal(scoreFields, values);
+  const weightedTotal = computeWeightedTotal(scoreFields, values);
+  const showWeightedTotal = hasWeightedCriteria(scoreFields);
+  const maxRawTotal = scoreFields.length * 10;
 
   useEffect(() => {
     const fetchExisting = async () => {
@@ -57,21 +97,33 @@ const EvaluateSubmission = () => {
       try {
         const response = await api.get('/evaluations/me');
         const list = getApiList(response);
-        const match = list.find((ev) => ev.submission?._id === submissionId || ev.submission === submissionId);
+        const match = list.find(
+          (evaluation) =>
+            evaluation.submission?._id === submissionId || evaluation.submission === submissionId
+        );
 
         if (match) {
           setExistingEvaluation(match);
-          scoreFields.forEach((field) => setValue(field.id, match[field.id] ?? 0));
           setValue('remarks', match.remarks);
         }
+
+        const hackathonData = await resolveHackathonForSubmission(submissionId, match, user?.id);
+        setHackathon(hackathonData);
       } catch (err) {
-        console.error('Failed to load existing evaluations:', err.message);
+        console.error('Failed to load evaluation context:', err.message);
       } finally {
         setIsLoading(false);
       }
     };
     fetchExisting();
-  }, [submissionId, setValue]);
+  }, [submissionId, setValue, user?.id]);
+
+  useEffect(() => {
+    if (!existingEvaluation) return;
+    DEFAULT_SCORE_FIELDS.forEach((field) => {
+      setValue(field.id, existingEvaluation[field.id] ?? 0);
+    });
+  }, [existingEvaluation, setValue]);
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
@@ -94,65 +146,101 @@ const EvaluateSubmission = () => {
   if (isLoading) return <Loader size="lg" />;
 
   return (
-    <div className="flex flex-col gap-6 max-w-3xl mx-auto">
-      <Link to="/judge/hackathons" className="text-slate-400 hover:text-slate-600 flex items-center gap-1.5 text-xs font-semibold select-none">
-        <ArrowLeft size={14} /> Back to Assigned Events
+    <div className="relative flex flex-col gap-8 max-w-3xl">
+      <Link
+        to="/judge/hackathons"
+        className="text-muted hover:text-primary-soft flex items-center gap-1.5 text-xs transition-colors w-fit"
+      >
+        <ArrowLeft size={14} /> Back to assigned events
       </Link>
 
       <div>
-        <h2 className="text-xl font-bold text-secondary">
-          {existingEvaluation ? 'Update Evaluation' : 'Score Submission'}
-        </h2>
-        <p className="text-xs text-slate-400">
-          Score each criterion from 0 to 10. Total updates automatically.
+        <p className="text-[11px] tracking-[0.32em] uppercase text-primary-soft/80 mb-3 font-medium">
+          Scoring
+        </p>
+        <h1 className="text-3xl font-display font-semibold tracking-tight">
+          {existingEvaluation ? 'Update evaluation' : 'Score submission'}
+        </h1>
+        <p className="text-sm text-muted mt-2">
+          {hackathon?.judgingCriteria?.length
+            ? `Score each rubric criterion for ${hackathon.title} from 0 to 10.`
+            : 'Score each criterion from 0 to 10. Total updates automatically.'}
         </p>
       </div>
 
-      <Card>
-        <div className="bg-slate-50 border border-border p-4 rounded-lg text-xs text-slate-500 mb-6 flex justify-between items-center">
-          <div>
-            <span className="font-bold text-secondary uppercase">Submission Reference:</span>
-            <div className="font-mono text-slate-600 font-semibold">{submissionId}</div>
-          </div>
-          <div className="text-right">
-            <div className="text-[10px] uppercase text-slate-400 font-bold">Total Score</div>
-            <div className="text-lg font-extrabold text-primary">{totalScore} / 60</div>
-          </div>
-        </div>
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {scoreFields.map((field) => (
+      <div className="rounded-2xl ring-1 ring-white/[0.06] bg-white/[0.02] p-5 sm:p-6 text-xs text-muted flex justify-between items-center gap-4">
+        <div>
+          <span className="text-[11px] tracking-[0.14em] uppercase text-muted/80">Submission</span>
+          <div className="font-mono text-secondary/90 mt-1 break-all">{submissionId}</div>
+          {hackathon?.title && (
+            <div className="text-sm text-secondary/80 mt-2">{hackathon.title}</div>
+          )}
+        </div>
+        <div className="text-right shrink-0">
+          {showWeightedTotal ? (
+            <>
+              <div className="text-[11px] tracking-[0.14em] uppercase text-muted/80">Weighted</div>
+              <div className="text-2xl font-display font-semibold text-primary-soft tabular-nums mt-0.5">
+                {weightedTotal}
+                <span className="text-muted text-base font-medium"> / 10</span>
+              </div>
+              <div className="text-[10px] text-muted/70 mt-1 tabular-nums">
+                Raw {rawTotal} / {maxRawTotal}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-[11px] tracking-[0.14em] uppercase text-muted/80">Total</div>
+              <div className="text-2xl font-display font-semibold text-primary-soft tabular-nums mt-0.5">
+                {rawTotal}
+                <span className="text-muted text-base font-medium"> / {maxRawTotal}</span>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+        {hiddenScoreFields.map((field) => (
+          <input key={field.id} type="hidden" {...register(field.id, { valueAsNumber: true })} />
+        ))}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {scoreFields.map((field) => {
+            const weightLabel = field.weight > 0 ? ` · ${field.weight}%` : '';
+            return (
               <Input
                 key={field.id}
                 id={field.id}
                 type="number"
-                label={`${field.label} (0-10)`}
+                label={`${field.label}${weightLabel} (0-10)`}
                 placeholder="e.g. 8"
                 error={errors[field.id]?.message}
                 {...register(field.id, { valueAsNumber: true })}
               />
-            ))}
-          </div>
+            );
+          })}
+        </div>
 
-          <Textarea
-            id="remarks"
-            label="Evaluation Remarks"
-            placeholder="Provide qualitative feedback for the team..."
-            error={errors.remarks?.message}
-            {...register('remarks')}
-          />
+        <Textarea
+          id="remarks"
+          label="Evaluation remarks"
+          placeholder="Provide qualitative feedback for the team..."
+          error={errors.remarks?.message}
+          {...register('remarks')}
+        />
 
-          <div className="flex items-center justify-end gap-3 mt-4 border-t border-border pt-4">
-            <Link to="/judge/hackathons">
-              <Button variant="secondary">Cancel</Button>
-            </Link>
-            <Button type="submit" variant="primary" className="gap-1.5" isLoading={isSubmitting}>
-              <Save size={16} /> {existingEvaluation ? 'Update Scores' : 'Submit Scores'}
-            </Button>
-          </div>
-        </form>
-      </Card>
+        <div className="flex items-center justify-end gap-3 mt-2 pt-6 border-t border-white/[0.06]">
+          <Link to="/judge/hackathons">
+            <Button variant="secondary">Cancel</Button>
+          </Link>
+          <Button type="submit" className="gap-1.5" isLoading={isSubmitting}>
+            <Save size={16} /> {existingEvaluation ? 'Update scores' : 'Submit scores'}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };

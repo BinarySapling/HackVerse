@@ -46,12 +46,14 @@ export const hackathonSchema = z.object({
     z.number({ invalid_type_error: 'Max teams must be a number' }).int().min(1).optional()
   ),
   prizePool: z.string().optional().nullable(),
+  theme: z.string().max(100).optional().nullable(),
+  mode: z.enum(['online', 'offline', 'hybrid']).optional(),
+  venue: z.string().max(200).optional().nullable(),
   contactEmail: z
     .string()
     .min(1, 'Contact email is required')
     .email('Please enter a valid email address'),
   rules: z.string().optional().nullable(),
-  judgeEmails: z.string().optional().nullable(),
 }).refine((data) => new Date(data.registrationStart) < new Date(data.registrationEnd), {
   message: 'Registration end must be after registration start',
   path: ['registrationEnd'],

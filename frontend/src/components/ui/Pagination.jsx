@@ -11,7 +11,9 @@ const Pagination = ({
   if (totalPages <= 1) return null;
 
   return (
-    <div className={`flex items-center justify-between px-4 py-3 bg-white border border-border rounded-lg shadow-sm ${className}`}>
+    <div
+      className={`flex items-center justify-between px-4 py-3 rounded-2xl ring-1 ring-white/[0.06] bg-white/[0.02] ${className}`}
+    >
       <div className="flex flex-1 justify-between sm:hidden">
         <Button
           variant="secondary"
@@ -31,26 +33,23 @@ const Pagination = ({
         </Button>
       </div>
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm text-slate-500">
-            Showing Page <span className="font-semibold text-secondary">{currentPage}</span> of{' '}
-            <span className="font-semibold text-secondary">{totalPages}</span>
-          </p>
-        </div>
+        <p className="text-sm text-muted">
+          Page <span className="font-semibold text-secondary">{currentPage}</span> of{' '}
+          <span className="font-semibold text-secondary">{totalPages}</span>
+        </p>
         <div className="flex items-center gap-1">
           <Button
             variant="secondary"
             size="sm"
             disabled={currentPage === 1}
             onClick={() => onPageChange(currentPage - 1)}
-            className="p-1.5"
+            className="p-1.5 !rounded-full"
           >
             <ChevronLeft size={16} />
           </Button>
-          
+
           {Array.from({ length: totalPages }, (_, idx) => {
             const pageNum = idx + 1;
-            // Limit page buttons shown
             if (pageNum === 1 || pageNum === totalPages || Math.abs(pageNum - currentPage) <= 1) {
               return (
                 <Button
@@ -58,13 +57,18 @@ const Pagination = ({
                   variant={currentPage === pageNum ? 'primary' : 'secondary'}
                   size="sm"
                   onClick={() => onPageChange(pageNum)}
-                  className="w-8 h-8 p-0"
+                  className="w-8 h-8 p-0 !rounded-full"
                 >
                   {pageNum}
                 </Button>
               );
-            } else if (pageNum === 2 || pageNum === totalPages - 1) {
-              return <span key={pageNum} className="text-slate-400 px-1">...</span>;
+            }
+            if (pageNum === 2 || pageNum === totalPages - 1) {
+              return (
+                <span key={pageNum} className="text-muted px-1">
+                  ...
+                </span>
+              );
             }
             return null;
           })}
@@ -74,7 +78,7 @@ const Pagination = ({
             size="sm"
             disabled={currentPage === totalPages}
             onClick={() => onPageChange(currentPage + 1)}
-            className="p-1.5"
+            className="p-1.5 !rounded-full"
           >
             <ChevronRight size={16} />
           </Button>

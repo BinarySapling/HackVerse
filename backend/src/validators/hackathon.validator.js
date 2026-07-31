@@ -43,7 +43,7 @@ const faqValidator = z.object({
     .min(1, "FAQ answer cannot be empty")
 });
 
-export const createHackathonSchema = z.object({
+const hackathonBodySchema = z.object({
   title: z
     .string({ required_error: "Hackathon title is required" })
     .trim()
@@ -98,6 +98,9 @@ export const createHackathonSchema = z.object({
   prizePool: z.string().trim().optional().nullable(),
   status: z.nativeEnum(HackathonStatus).optional(),
   visibility: z.enum(['public', 'private']).optional(),
+  theme: z.string().trim().max(100).optional().nullable(),
+  mode: z.enum(['online', 'offline', 'hybrid']).optional().default('online'),
+  venue: z.string().trim().max(200).optional().nullable(),
   problemStatements: z.array(problemStatementValidator).optional().default([]),
   techStack: z.array(z.string().trim().min(1)).optional().default([]),
   rules: z.string().optional().nullable(),
@@ -115,9 +118,24 @@ export const createHackathonSchema = z.object({
   faq: z.array(faqValidator).optional().default([])
 });
 
-export const updateHackathonSchema = createHackathonSchema.partial();
+const judgingCriteriaWeightRefine = (data) => {
+  if (!data.judgingCriteria || data.judgingCriteria.length === 0) return true;
+  const sum = data.judgingCriteria.reduce((acc, c) => acc + c.weight, 0);
+  return Math.abs(sum - 100) <= 1;
+};
+
+export const createHackathonSchema = hackathonBodySchema.refine(judgingCriteriaWeightRefine, {
+  message: 'Judging criteria weights must sum to approximately 100',
+  path: ['judgingCriteria'],
+});
+
+export const updateHackathonSchema = hackathonBodySchema.partial().refine(judgingCriteriaWeightRefine, {
+  message: 'Judging criteria weights must sum to approximately 100',
+  path: ['judgingCriteria'],
+});
 
 export default {
   createHackathonSchema,
   updateHackathonSchema
 };
+

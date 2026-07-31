@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../config/axios';
-import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Loader from '../../components/ui/Loader';
-import Table from '../../components/ui/Table';
+import PageHeader, { SoftDivider } from '../../components/ui/PageHeader';
 import { getApiList } from '../../utils/apiResponse';
 import toast from 'react-hot-toast';
 import { ShieldX } from 'lucide-react';
@@ -19,7 +18,7 @@ const MyRegistrations = () => {
     try {
       const response = await api.get('/registrations/me');
       setRegistrations(getApiList(response));
-    } catch (err) {
+    } catch {
       toast.error('Failed to load registrations.');
     } finally {
       setIsLoading(false);
@@ -41,58 +40,63 @@ const MyRegistrations = () => {
     }
   };
 
-  const getStatusBadgeVariant = (status) => {
-    return status === 'registered' ? 'success' : 'danger';
-  };
-
-  const headers = ['Hackathon', 'Registered On', 'Status', 'Actions'];
-
-  const renderRow = (reg) => (
-    <tr key={reg._id} className="hover:bg-hoverSurface transition-colors">
-      <td className="px-5 py-4 font-semibold text-secondary">
-        <Link to={`/hackathons/${reg.hackathon?.slug}`} className="hover:underline text-primary">
-          {reg.hackathon?.title}
-        </Link>
-      </td>
-      <td className="px-5 py-4 text-slate-500">
-        {new Date(reg.createdAt).toLocaleDateString()}
-      </td>
-      <td className="px-5 py-4">
-        <Badge variant={getStatusBadgeVariant(reg.status)}>
-          {reg.status}
-        </Badge>
-      </td>
-      <td className="px-5 py-4">
-        {reg.status === 'registered' ? (
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => handleCancel(reg._id)}
-            className="gap-1 px-2.5 py-1.5"
-          >
-            <ShieldX size={14} /> Cancel
-          </Button>
-        ) : (
-          <span className="text-xs text-slate-400 font-medium">Inactive</span>
-        )}
-      </td>
-    </tr>
-  );
-
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-xl font-bold text-secondary">My Registrations</h2>
-        <p className="text-xs text-slate-400">Track and manage your registrations for active hackathons.</p>
-      </div>
-
-      <Table
-        headers={headers}
-        data={registrations}
-        renderRow={renderRow}
-        isLoading={isLoading}
-        emptyState="You have not registered for any hackathons yet."
+    <div className="relative flex flex-col">
+      <PageHeader
+        eyebrow="Participant"
+        title="My registrations"
+        description="Track and manage your registrations for active hackathons."
       />
+
+      <SoftDivider />
+
+      <div className="pt-8 pb-4">
+        {isLoading ? (
+          <Loader size="lg" />
+        ) : registrations.length === 0 ? (
+          <p className="text-sm text-muted py-10">
+            You have not registered for any hackathons yet.
+          </p>
+        ) : (
+          <ul className="flex flex-col">
+            {registrations.map((reg, index) => (
+              <li key={reg._id}>
+                {index > 0 && <div className="soft-row-divider" />}
+                <div className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <Link
+                      to={`/hackathons/${reg.hackathon?.slug || reg.hackathon?._id}`}
+                      className="font-display font-semibold tracking-tight hover:text-primary-soft transition-colors"
+                    >
+                      {reg.hackathon?.title}
+                    </Link>
+                    <p className="text-xs text-muted mt-1.5">
+                      Registered {new Date(reg.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={reg.status === 'registered' ? 'success' : 'danger'}>
+                      {reg.status}
+                    </Badge>
+                    {reg.status === 'registered' ? (
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleCancel(reg._id)}
+                        className="gap-1"
+                      >
+                        <ShieldX size={14} /> Cancel
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted">Inactive</span>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 };

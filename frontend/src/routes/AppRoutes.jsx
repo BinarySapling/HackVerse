@@ -9,6 +9,7 @@ import RoleGuard from './RoleGuard';
 import Landing from '../pages/Landing';
 import Login from '../pages/auth/Login';
 import Signup from '../pages/auth/Signup';
+import VerifyEmail from '../pages/auth/VerifyEmail';
 import ForgotPassword from '../pages/auth/ForgotPassword';
 import ResetPassword from '../pages/auth/ResetPassword';
 import HackathonList from '../pages/Hackathons/HackathonList';
@@ -24,8 +25,11 @@ import HackathonCreate from '../pages/Hackathons/HackathonCreate';
 import HackathonEdit from '../pages/Hackathons/HackathonEdit';
 import OrganizerResults from '../pages/Leaderboard/OrganizerResults';
 import TeamManagement from '../pages/team/TeamManagement';
+import OrganizerTeams from '../pages/team/OrganizerTeams';
 import ProjectSubmission from '../pages/Submission/ProjectSubmission';
 import MyRegistrations from '../pages/registration/MyRegistrations';
+import OrganizerRegistrations from '../pages/registration/OrganizerRegistrations';
+import OrganizerSubmissions from '../pages/Submission/OrganizerSubmissions';
 import AssignedHackathons from '../pages/Judge/AssignedHackathons';
 import EvaluateSubmission from '../pages/Judge/EvaluateSubmission';
 import PublicLeaderboard from '../pages/Leaderboard/PublicLeaderboard';
@@ -39,6 +43,7 @@ const AppRoutes = () => {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/hackathons" element={<HackathonList />} />
@@ -84,6 +89,9 @@ const AppRoutes = () => {
             <Route path="/dashboard/organizer" element={<OrganizerDashboard />} />
             <Route path="/dashboard/admin" element={<AdminDashboard />} />
             <Route path="/organizer/hackathons" element={<HackathonList />} />
+            <Route path="/hackathons/:hackathonId/registrations" element={<OrganizerRegistrations />} />
+            <Route path="/hackathons/:hackathonId/submissions" element={<OrganizerSubmissions />} />
+            <Route path="/hackathons/:hackathonId/teams" element={<OrganizerTeams />} />
             <Route path="/hackathons/:hackathonId/results" element={<OrganizerResults />} />
           </Route>
         </Route>

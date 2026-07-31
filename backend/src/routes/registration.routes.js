@@ -2,19 +2,22 @@ import express from 'express';
 import {
   registerForHackathon,
   getMyRegistrations,
-  cancelRegistration
+  getHackathonRegistrations,
+  reviewRegistration,
+  cancelRegistration,
 } from '../controllers/registration.controller.js';
 import authenticate from '../middleware/authenticate.js';
 import authorize from '../middleware/authorize.js';
+import validate from '../middleware/validate.js';
 import { RolePolicies } from '../constants/permissions.js';
 import {
   validateHackathonIdParam,
-  validateRegistrationIdParam
+  validateRegistrationIdParam,
+  reviewRegistrationSchema,
 } from '../validators/registration.validator.js';
 
 const router = express.Router();
 
-// Route: Register participant for a hackathon
 router.post(
   '/hackathons/:hackathonId/register',
   authenticate,
@@ -23,7 +26,6 @@ router.post(
   registerForHackathon
 );
 
-// Route: Retrieve participant's own active registrations
 router.get(
   '/registrations/me',
   authenticate,
@@ -31,7 +33,23 @@ router.get(
   getMyRegistrations
 );
 
-// Route: Cancel an active registration (owner only)
+router.get(
+  '/hackathons/:hackathonId/registrations',
+  authenticate,
+  authorize(RolePolicies.ORGANIZER_OR_ADMIN),
+  validateHackathonIdParam,
+  getHackathonRegistrations
+);
+
+router.patch(
+  '/registrations/:id/review',
+  authenticate,
+  authorize(RolePolicies.ORGANIZER_OR_ADMIN),
+  validateRegistrationIdParam,
+  validate(reviewRegistrationSchema),
+  reviewRegistration
+);
+
 router.patch(
   '/registrations/:id/cancel',
   authenticate,

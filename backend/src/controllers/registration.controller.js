@@ -4,49 +4,59 @@ import asyncHandler from '../utils/asyncHandler.js';
 import HttpStatus from '../constants/httpStatus.js';
 
 export const registerForHackathon = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
-  const userRole = req.user.role;
-  const { hackathonId } = req.params;
-
-  const { registration, isReactivated } = await registrationService.registerForHackathon(userId, userRole, hackathonId);
+  const { registration, isReactivated } = await registrationService.registerForHackathon(
+    req.user.id,
+    req.user.role,
+    req.params.hackathonId
+  );
 
   return ApiResponse.success(
     res,
     isReactivated ? HttpStatus.OK : HttpStatus.CREATED,
-    "Registered for hackathon successfully",
+    'Registration submitted. Waiting for organizer approval.',
     registration
   );
 });
 
 export const getMyRegistrations = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
-  const result = await registrationService.getMyRegistrations(userId, req.query);
-
+  const result = await registrationService.getMyRegistrations(req.user.id, req.query);
   return ApiResponse.success(
     res,
     HttpStatus.OK,
-    "My registrations retrieved successfully",
+    'My registrations retrieved successfully',
     result.registrations,
     result.pagination
   );
 });
 
-export const cancelRegistration = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const userId = req.user.id;
-
-  const registration = await registrationService.cancelRegistration(id, userId);
-
-  return ApiResponse.success(
-    res,
-    HttpStatus.OK,
-    "Registration cancelled successfully",
-    registration
+export const getHackathonRegistrations = asyncHandler(async (req, res) => {
+  const registrations = await registrationService.getHackathonRegistrations(
+    req.params.hackathonId,
+    req.user.id,
+    req.user.role
   );
+  return ApiResponse.success(res, HttpStatus.OK, 'Registrations retrieved', registrations);
+});
+
+export const reviewRegistration = asyncHandler(async (req, res) => {
+  const registration = await registrationService.reviewRegistration(
+    req.params.id,
+    req.user.id,
+    req.user.role,
+    req.body.decision
+  );
+  return ApiResponse.success(res, HttpStatus.OK, `Registration ${req.body.decision}d`, registration);
+});
+
+export const cancelRegistration = asyncHandler(async (req, res) => {
+  const registration = await registrationService.cancelRegistration(req.params.id, req.user.id);
+  return ApiResponse.success(res, HttpStatus.OK, 'Registration cancelled successfully', registration);
 });
 
 export default {
   registerForHackathon,
   getMyRegistrations,
-  cancelRegistration
+  getHackathonRegistrations,
+  reviewRegistration,
+  cancelRegistration,
 };

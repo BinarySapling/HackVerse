@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { signupSchema } from '../../validations/auth';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import toast from 'react-hot-toast';
 import BrandLogo from '../../components/BrandLogo';
+import { ArrowLeft, Rocket, Users, Trophy } from 'lucide-react';
 
 const Signup = () => {
   const { signup } = useAuth();
@@ -28,15 +30,18 @@ const Signup = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      await signup({
+      const result = await signup({
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         role: data.role || 'participant',
         password: data.password,
       });
-      toast.success('Registration successful! Please login to your new account.');
-      navigate('/login');
+      toast.success('Account created! Check your email for the verification code.');
+      const cooldown = result?.resendCooldown || result?.otpExpiresIn || 180;
+      navigate(`/verify-email?email=${encodeURIComponent(data.email.trim().toLowerCase())}`, {
+        state: { resendCooldown: cooldown },
+      });
     } catch (err) {
       toast.error(err.message || 'Registration failed. Email might already exist.');
     } finally {
@@ -45,32 +50,71 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-[75vh] flex items-center justify-center py-6">
-      <div className="bg-white border border-border rounded-lg shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-2 max-w-4xl w-full">
-        {/* Left Side: Tagline & Artwork */}
-        <div className="bg-surfaceDark text-white p-8 md:p-12 flex flex-col justify-between gap-8">
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.45 }}
+        className="relative hidden lg:flex flex-col justify-between p-10 xl:p-14 overflow-hidden border-r border-white/[0.06] bg-surfaceDark"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute -top-16 right-0 h-64 w-64 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-10 left-10 h-48 w-48 rounded-full bg-primary-soft/10 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10">
           <BrandLogo size="lg" />
-
-          <div className="flex flex-col gap-3">
-            <h2 className="text-2xl font-bold leading-tight">Create, Build, and Evaluate seamlessly.</h2>
-            <p className="text-sm text-slate-300">
-              Join a network of academic innovators, expert developers, and judges pushing project engineering to new heights.
-            </p>
-          </div>
-
-          <svg className="w-full h-32 text-slate-700" fill="currentColor" viewBox="0 0 400 120">
-            <rect width="400" height="120" rx="8" className="fill-slate-700" />
-            <circle cx="200" cy="60" r="40" className="text-primary" fill="none" stroke="currentColor" strokeWidth="2" />
-            <line x1="200" y1="20" x2="200" y2="100" stroke="currentColor" strokeWidth="2" />
-            <line x1="160" y1="60" x2="240" y2="60" stroke="currentColor" strokeWidth="2" />
-          </svg>
         </div>
 
-        {/* Right Side: Form */}
-        <div className="p-8 md:p-12 flex flex-col justify-center gap-6">
+        <div className="relative z-10 flex flex-col items-center text-center gap-6 my-6">
+          <div className="float-slow pulse-glow rounded-3xl p-2">
+            <BrandLogo to={null} size="hero" showText={false} />
+          </div>
+          <div className="max-w-md">
+            <h2 className="text-3xl xl:text-4xl font-display font-bold leading-tight">
+              Create, Build, and Evaluate seamlessly.
+            </h2>
+            <p className="text-sm text-muted mt-4 leading-relaxed">
+              Join organizers, developers, and judges running academic hackathons on HackVerse.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-3 w-full max-w-sm">
+            {[
+              { icon: Rocket, label: 'Launch' },
+              { icon: Users, label: 'Team up' },
+              { icon: Trophy, label: 'Win' },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.label} className="rounded-2xl ring-1 ring-white/[0.08] bg-white/[0.03] p-3">
+                  <Icon size={18} className="mx-auto text-primary-soft" />
+                  <p className="text-[11px] text-muted mt-2">{item.label}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <p className="relative z-10 text-xs text-muted font-mono tracking-widest uppercase">HackVerse // Join Gate</p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.1 }}
+        className="flex flex-col justify-center px-6 sm:px-10 xl:px-20 py-10"
+      >
+        <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-secondary mb-8 w-fit">
+          <ArrowLeft size={14} /> Back to home
+        </Link>
+
+        <div className="lg:hidden mb-8 flex justify-center">
+          <BrandLogo size="xl" showText={false} />
+        </div>
+
+        <div className="max-w-md w-full mx-auto flex flex-col gap-6">
           <div>
-            <h1 className="text-2xl font-bold text-secondary">Join Platform</h1>
-            <p className="text-xs text-slate-400 mt-1">Create a participant account to register for hackathons.</p>
+            <h1 className="text-3xl font-display font-bold">Join HackVerse</h1>
+            <p className="text-sm text-muted mt-2">Create an account to start building.</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -95,38 +139,24 @@ const Signup = () => {
               id="email"
               type="email"
               label="Email Address"
-              placeholder="example@hackverse.com"
+              placeholder="dev@hackverse.io"
               error={errors.email?.message}
               {...register('email')}
             />
 
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-secondary">Account Type</span>
+              <span className="text-xs font-semibold text-muted uppercase tracking-wide">Account Type</span>
               <div className="grid grid-cols-2 gap-3">
-                <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm cursor-pointer hover:bg-hoverSurface">
-                  <input
-                    type="radio"
-                    value="participant"
-                    className="accent-primary"
-                    {...register('role')}
-                  />
+                <label className="flex items-center gap-2 rounded-xl ring-1 ring-white/[0.08] px-3 py-2.5 text-sm cursor-pointer hover:bg-white/[0.04] hover:ring-primary/40 transition-colors">
+                  <input type="radio" value="participant" className="accent-primary" {...register('role')} />
                   Participant
                 </label>
-                <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm cursor-pointer hover:bg-hoverSurface">
-                  <input
-                    type="radio"
-                    value="organizer"
-                    className="accent-primary"
-                    {...register('role')}
-                  />
+                <label className="flex items-center gap-2 rounded-xl ring-1 ring-white/[0.08] px-3 py-2.5 text-sm cursor-pointer hover:bg-white/[0.04] hover:ring-primary/40 transition-colors">
+                  <input type="radio" value="organizer" className="accent-primary" {...register('role')} />
                   Organizer
                 </label>
               </div>
-              {errors.role && (
-                <span className="text-xs text-danger font-medium">
-                  {errors.role.message}
-                </span>
-              )}
+              {errors.role && <span className="text-xs text-danger font-medium">{errors.role.message}</span>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -149,18 +179,18 @@ const Signup = () => {
             </div>
 
             <Button type="submit" variant="primary" className="w-full mt-2" isLoading={isSubmitting}>
-              Register Account
+              Create Account
             </Button>
           </form>
 
-          <p className="text-xs text-slate-500 text-center">
+          <p className="text-sm text-muted text-center">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-primary hover:underline">
+            <Link to="/login" className="font-semibold text-primary-soft hover:underline">
               Log In
             </Link>
           </p>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

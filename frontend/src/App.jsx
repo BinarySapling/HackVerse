@@ -14,11 +14,11 @@ function App() {
           toastOptions={{
             duration: 4000,
             style: {
-              background: '#FFFFFF',
-              color: '#1E293B',
-              border: '1px solid #E2E8F0',
+              background: '#221E28',
+              color: '#E8DFEE',
+              border: '1px solid #3F3A4A',
               fontSize: '14px',
-              fontFamily: 'Inter, sans-serif font',
+              fontFamily: '"Poppins", system-ui, sans-serif',
             },
           }}
         />
