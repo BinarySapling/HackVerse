@@ -20,6 +20,9 @@ const Signup = () => {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(signupSchema),
+    defaultValues: {
+      role: 'participant',
+    },
   });
 
   const onSubmit = async (data) => {
@@ -29,6 +32,7 @@ const Signup = () => {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
+        role: data.role || 'participant',
         password: data.password,
       });
       toast.success('Registration successful! Please login to your new account.');
@@ -100,6 +104,35 @@ const Signup = () => {
               error={errors.email?.message}
               {...register('email')}
             />
+
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-semibold text-secondary">Account Type</span>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm cursor-pointer hover:bg-hoverSurface">
+                  <input
+                    type="radio"
+                    value="participant"
+                    className="accent-primary"
+                    {...register('role')}
+                  />
+                  Participant
+                </label>
+                <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm cursor-pointer hover:bg-hoverSurface">
+                  <input
+                    type="radio"
+                    value="organizer"
+                    className="accent-primary"
+                    {...register('role')}
+                  />
+                  Organizer
+                </label>
+              </div>
+              {errors.role && (
+                <span className="text-xs text-danger font-medium">
+                  {errors.role.message}
+                </span>
+              )}
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <Input

@@ -41,7 +41,7 @@ const HackathonEdit = () => {
     const fetchEventData = async () => {
       setIsLoading(true);
       try {
-        const response = await api.get('/hackathons');
+        const response = await api.get('/hackathons?includeDrafts=true');
         const list = getApiList(response);
         const h = list.find((item) => item._id === hackathonId);
 

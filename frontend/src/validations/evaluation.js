@@ -5,6 +5,10 @@ export const evaluationSchema = z.object({
     .number({ invalid_type_error: 'Innovation score must be a number' })
     .min(0, 'Innovation score cannot be less than 0')
     .max(10, 'Innovation score cannot exceed 10'),
+  uiuxScore: z
+    .number({ invalid_type_error: 'UI/UX score must be a number' })
+    .min(0, 'UI/UX score cannot be less than 0')
+    .max(10, 'UI/UX score cannot exceed 10'),
   technicalScore: z
     .number({ invalid_type_error: 'Technical score must be a number' })
     .min(0, 'Technical score cannot be less than 0')
@@ -13,6 +17,14 @@ export const evaluationSchema = z.object({
     .number({ invalid_type_error: 'Presentation score must be a number' })
     .min(0, 'Presentation score cannot be less than 0')
     .max(10, 'Presentation score cannot exceed 10'),
+  codeQualityScore: z
+    .number({ invalid_type_error: 'Code quality score must be a number' })
+    .min(0, 'Code quality score cannot be less than 0')
+    .max(10, 'Code quality score cannot exceed 10'),
+  problemSolvingScore: z
+    .number({ invalid_type_error: 'Problem solving score must be a number' })
+    .min(0, 'Problem solving score cannot be less than 0')
+    .max(10, 'Problem solving score cannot exceed 10'),
   remarks: z
     .string()
     .min(5, 'Remarks must be at least 5 characters long')

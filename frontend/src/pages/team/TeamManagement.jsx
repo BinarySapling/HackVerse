@@ -10,7 +10,7 @@ import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Loader from '../../components/ui/Loader';
 import Badge from '../../components/ui/Badge';
-import { getApiData, getApiList } from '../../utils/apiResponse';
+import { getApiData } from '../../utils/apiResponse';
 import toast from 'react-hot-toast';
 import { Users, Plus, UserMinus, ShieldAlert, ArrowLeft, Trash2, LogOut } from 'lucide-react';
 
@@ -43,11 +43,8 @@ const TeamManagement = () => {
   const fetchTeamAndEvent = async () => {
     setIsLoading(true);
     try {
-      // Get Hackathon Info
-      const hRes = await api.get('/hackathons');
-      const list = getApiList(hRes);
-      const h = list.find((item) => item._id === hackathonId);
-      setHackathon(h);
+      const hRes = await api.get(`/hackathons/${hackathonId}`);
+      setHackathon(getApiData(hRes));
 
       // Get My Team
       const response = await api.get(`/hackathons/${hackathonId}/my-team`);
@@ -78,15 +75,14 @@ const TeamManagement = () => {
     }
   };
 
-  const onAddMember = async (data) => {
+  const onInviteMember = async (data) => {
     setIsSubmitting(true);
     try {
-      await api.patch(`/teams/${team._id}/members`, { memberId: data.memberId });
-      toast.success('Member added successfully!');
+      await api.post(`/teams/${team._id}/invitations`, { email: data.email });
+      toast.success('Invitation email sent!');
       resetInvite();
-      fetchTeamAndEvent();
     } catch (err) {
-      toast.error(err.message || 'Failed to add member.');
+      toast.error(err.message || 'Failed to send invitation.');
     } finally {
       setIsSubmitting(false);
     }
@@ -127,7 +123,18 @@ const TeamManagement = () => {
 
   if (isLoading) return <Loader size="lg" />;
 
-  const isLeader = team && team.leader?._id === user?.id;
+  const userId = String(user?.id || user?._id || '');
+  const leaderId = String(team?.leader?._id || team?.leader || '');
+  const isLeader = Boolean(team && userId && leaderId === userId);
+  const submissionStart = hackathon
+    ? new Date(hackathon.submissionStart || hackathon.hackathonStart)
+    : null;
+  const submissionEnd = hackathon
+    ? new Date(hackathon.submissionDeadline || hackathon.hackathonEnd)
+    : null;
+  const now = new Date();
+  const submissionOpen =
+    submissionStart && submissionEnd && now >= submissionStart && now <= submissionEnd;
   const memberList = team?.members?.filter((member) => member._id !== team.leader?._id) || [];
 
   return (
@@ -246,33 +253,47 @@ const TeamManagement = () => {
             {/* Invite form */}
             {isLeader && (team.members?.length || 0) < (team.maxMembers || 4) && (
               <Card className="flex flex-col gap-4">
-                <h4 className="text-sm font-bold text-secondary">Add Team Member</h4>
-                <form onSubmit={handleInviteSubmit(onAddMember)} className="flex flex-col gap-3">
+                <h4 className="text-sm font-bold text-secondary">Invite Team Member</h4>
+                <form onSubmit={handleInviteSubmit(onInviteMember)} className="flex flex-col gap-3">
                   <Input
-                    id="memberId"
-                    placeholder="Participant user ID"
-                    error={inviteErrors.memberId?.message}
-                    {...registerInvite('memberId')}
+                    id="email"
+                    type="email"
+                    placeholder="participant@email.com"
+                    error={inviteErrors.email?.message}
+                    {...registerInvite('email')}
                   />
                   <Button type="submit" variant="primary" className="w-full gap-1.5" isLoading={isSubmitting}>
-                    <Plus size={16} /> Add Member
+                    <Plus size={16} /> Send Invite
                   </Button>
                 </form>
               </Card>
             )}
 
-            {/* Submission shortcut */}
-            <Card className="flex flex-col gap-4 text-center">
-              <h4 className="text-sm font-bold text-secondary">Project Submission</h4>
-              <p className="text-xs text-slate-500">
-                Ready to submit? Leader must register and provide repository details.
-              </p>
-              <Link to={`/hackathons/${hackathonId}/submit`}>
-                <Button variant="primary" className="w-full">
-                  Go to Submissions
-                </Button>
-              </Link>
-            </Card>
+            {/* Submission shortcut — only while window is open */}
+            {submissionOpen ? (
+              <Card className="flex flex-col gap-4 text-center">
+                <h4 className="text-sm font-bold text-secondary">Project Submission</h4>
+                <p className="text-xs text-slate-500">
+                  Ready to submit? Leader must register and provide repository details.
+                </p>
+                <Link to={`/hackathons/${hackathonId}/submit`}>
+                  <Button variant="primary" className="w-full">
+                    Go to Submissions
+                  </Button>
+                </Link>
+              </Card>
+            ) : (
+              <Card className="flex flex-col gap-2 text-center">
+                <h4 className="text-sm font-bold text-secondary">Project Submission</h4>
+                <p className="text-xs text-slate-500">
+                  {submissionStart && now < submissionStart
+                    ? `Opens ${submissionStart.toLocaleString()}`
+                    : submissionEnd && now > submissionEnd
+                      ? 'Submission window is closed.'
+                      : 'Submission window unavailable.'}
+                </p>
+              </Card>
+            )}
           </div>
         </div>
       )}

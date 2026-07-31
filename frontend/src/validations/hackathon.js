@@ -25,6 +25,8 @@ export const hackathonSchema = z.object({
   hackathonEnd: z
     .string()
     .min(1, 'Hackathon end date is required'),
+  submissionStart: z.string().optional().nullable(),
+  submissionDeadline: z.string().optional().nullable(),
   minTeamSize: z
     .number({ invalid_type_error: 'Min team size must be a number' })
     .int()
@@ -33,11 +35,17 @@ export const hackathonSchema = z.object({
     .number({ invalid_type_error: 'Max team size must be a number' })
     .int()
     .min(1, 'Maximum team size must be at least 1'),
+  maxTeams: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined || Number.isNaN(val) ? undefined : val),
+    z.number({ invalid_type_error: 'Max teams must be a number' }).int().min(1).optional()
+  ),
+  prizePool: z.string().optional().nullable(),
   contactEmail: z
     .string()
     .min(1, 'Contact email is required')
     .email('Please enter a valid email address'),
   rules: z.string().optional().nullable(),
+  judgeEmails: z.string().optional().nullable(),
 }).refine((data) => new Date(data.registrationStart) < new Date(data.registrationEnd), {
   message: 'Registration end must be after registration start',
   path: ['registrationEnd'],

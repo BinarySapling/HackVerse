@@ -13,6 +13,15 @@ import { getApiList } from '../../utils/apiResponse';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Save } from 'lucide-react';
 
+const scoreFields = [
+  { id: 'innovationScore', label: 'Innovation' },
+  { id: 'uiuxScore', label: 'UI/UX' },
+  { id: 'technicalScore', label: 'Technical Complexity' },
+  { id: 'presentationScore', label: 'Presentation' },
+  { id: 'codeQualityScore', label: 'Code Quality' },
+  { id: 'problemSolvingScore', label: 'Problem Solving' },
+];
+
 const EvaluateSubmission = () => {
   const { submissionId } = useParams();
   const navigate = useNavigate();
@@ -24,10 +33,23 @@ const EvaluateSubmission = () => {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(evaluationSchema),
+    defaultValues: {
+      innovationScore: 0,
+      uiuxScore: 0,
+      technicalScore: 0,
+      presentationScore: 0,
+      codeQualityScore: 0,
+      problemSolvingScore: 0,
+      remarks: '',
+    },
   });
+
+  const values = watch();
+  const totalScore = scoreFields.reduce((sum, field) => sum + (Number(values[field.id]) || 0), 0);
 
   useEffect(() => {
     const fetchExisting = async () => {
@@ -36,12 +58,10 @@ const EvaluateSubmission = () => {
         const response = await api.get('/evaluations/me');
         const list = getApiList(response);
         const match = list.find((ev) => ev.submission?._id === submissionId || ev.submission === submissionId);
-        
+
         if (match) {
           setExistingEvaluation(match);
-          setValue('innovationScore', match.innovationScore);
-          setValue('technicalScore', match.technicalScore);
-          setValue('presentationScore', match.presentationScore);
+          scoreFields.forEach((field) => setValue(field.id, match[field.id] ?? 0));
           setValue('remarks', match.remarks);
         }
       } catch (err) {
@@ -51,17 +71,15 @@ const EvaluateSubmission = () => {
       }
     };
     fetchExisting();
-  }, [submissionId]);
+  }, [submissionId, setValue]);
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
       if (existingEvaluation) {
-        // Update existing evaluation
         await api.patch(`/evaluations/${existingEvaluation._id}`, data);
         toast.success('Evaluation updated successfully!');
       } else {
-        // Create new evaluation
         await api.post(`/submissions/${submissionId}/evaluate`, data);
         toast.success('Evaluation submitted successfully!');
       }
@@ -76,7 +94,7 @@ const EvaluateSubmission = () => {
   if (isLoading) return <Loader size="lg" />;
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl mx-auto">
+    <div className="flex flex-col gap-6 max-w-3xl mx-auto">
       <Link to="/judge/hackathons" className="text-slate-400 hover:text-slate-600 flex items-center gap-1.5 text-xs font-semibold select-none">
         <ArrowLeft size={14} /> Back to Assigned Events
       </Link>
@@ -86,44 +104,35 @@ const EvaluateSubmission = () => {
           {existingEvaluation ? 'Update Evaluation' : 'Score Submission'}
         </h2>
         <p className="text-xs text-slate-400">
-          Provide numeric scores from 0 to 10 across dimensions. Total score compiles dynamically.
+          Score each criterion from 0 to 10. Total updates automatically.
         </p>
       </div>
 
       <Card>
-        <div className="bg-slate-50 border border-border p-4 rounded-lg text-xs text-slate-500 mb-6 flex flex-col gap-1">
-          <span className="font-bold text-secondary uppercase">Submission Reference:</span>
-          <span className="font-mono text-slate-600 font-semibold">{submissionId}</span>
+        <div className="bg-slate-50 border border-border p-4 rounded-lg text-xs text-slate-500 mb-6 flex justify-between items-center">
+          <div>
+            <span className="font-bold text-secondary uppercase">Submission Reference:</span>
+            <div className="font-mono text-slate-600 font-semibold">{submissionId}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] uppercase text-slate-400 font-bold">Total Score</div>
+            <div className="text-lg font-extrabold text-primary">{totalScore} / 60</div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Input
-              id="innovationScore"
-              type="number"
-              label="Innovation Score (0-10)"
-              placeholder="e.g. 8"
-              error={errors.innovationScore?.message}
-              {...register('innovationScore', { valueAsNumber: true })}
-            />
-
-            <Input
-              id="technicalScore"
-              type="number"
-              label="Technical Score (0-10)"
-              placeholder="e.g. 7"
-              error={errors.technicalScore?.message}
-              {...register('technicalScore', { valueAsNumber: true })}
-            />
-
-            <Input
-              id="presentationScore"
-              type="number"
-              label="Presentation Score (0-10)"
-              placeholder="e.g. 9"
-              error={errors.presentationScore?.message}
-              {...register('presentationScore', { valueAsNumber: true })}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {scoreFields.map((field) => (
+              <Input
+                key={field.id}
+                id={field.id}
+                type="number"
+                label={`${field.label} (0-10)`}
+                placeholder="e.g. 8"
+                error={errors[field.id]?.message}
+                {...register(field.id, { valueAsNumber: true })}
+              />
+            ))}
           </div>
 
           <Textarea

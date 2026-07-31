@@ -9,8 +9,8 @@ export const teamSchema = z.object({
 });
 
 export const inviteSchema = z.object({
-  memberId: z
+  email: z
     .string()
-    .min(1, 'Member ID is required')
-    .regex(/^[a-f\d]{24}$/i, 'Please enter a valid MongoDB user ID'),
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
 });

@@ -17,7 +17,7 @@ const AdminDashboard = () => {
     setIsLoading(true);
     try {
       // Endpoint: GET /hackathons
-      const response = await api.get('/hackathons');
+      const response = await api.get('/hackathons?includeDrafts=true');
       const data = getApiList(response);
       setHackathons(data);
     } catch (err) {

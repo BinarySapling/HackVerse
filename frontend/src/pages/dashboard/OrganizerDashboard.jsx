@@ -6,21 +6,26 @@ import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Loader from '../../components/ui/Loader';
 import { useAuth } from '../../context/AuthContext';
-import { getApiList } from '../../utils/apiResponse';
-import { Trophy, Calendar, PlusCircle, Edit3, Award, Users, Trash2 } from 'lucide-react';
+import { getApiData, getApiList } from '../../utils/apiResponse';
+import { Calendar, PlusCircle, Edit3, Award, Trash2, Rocket, Users, ClipboardList, Gavel } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const OrganizerDashboard = () => {
   const { user } = useAuth();
   const [hackathons, setHackathons] = useState([]);
+  const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMyEvents = async () => {
     setIsLoading(true);
     try {
-      const response = await api.get('/hackathons');
-      const data = getApiList(response);
+      const [eventsRes, statsRes] = await Promise.all([
+        api.get('/hackathons?includeDrafts=true'),
+        api.get('/dashboard/stats'),
+      ]);
+      const data = getApiList(eventsRes);
       setHackathons(data.filter((h) => (h.organizer?._id || h.organizer) === user?.id));
+      setStats(getApiData(statsRes));
     } catch (err) {
       toast.error('Failed to load organizer hackathons.');
     } finally {
@@ -43,12 +48,22 @@ const OrganizerDashboard = () => {
     }
   };
 
+  const handlePublish = async (id) => {
+    try {
+      await api.post(`/hackathons/${id}/publish`);
+      toast.success('Hackathon published.');
+      fetchMyEvents();
+    } catch (err) {
+      toast.error(err.message || 'Publish failed.');
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-secondary">Organizer Console</h2>
-          <p className="text-xs text-slate-400">Launch and configure events, assign judges, and view project evaluations.</p>
+          <p className="text-xs text-slate-400">Launch and configure events, invite judges, and announce winners.</p>
         </div>
         <Link to="/hackathons/create">
           <Button variant="primary" className="gap-2">
@@ -56,6 +71,26 @@ const OrganizerDashboard = () => {
           </Button>
         </Link>
       </div>
+
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {[
+            { label: 'Hackathons', value: stats.totalHackathons, icon: ClipboardList },
+            { label: 'Teams', value: stats.registeredTeams, icon: Users },
+            { label: 'Judges', value: stats.judges, icon: Gavel },
+            { label: 'Pending Invites', value: stats.pendingInvitations, icon: Users },
+            { label: 'Submissions', value: stats.submissions, icon: ClipboardList },
+            { label: 'Winners', value: stats.winners, icon: Award },
+          ].map((item) => (
+            <Card key={item.label} className="p-4">
+              <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold uppercase">
+                <item.icon size={14} /> {item.label}
+              </div>
+              <div className="text-2xl font-bold text-secondary mt-1">{item.value ?? 0}</div>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {isLoading ? (
         <Loader size="lg" />
@@ -88,6 +123,11 @@ const OrganizerDashboard = () => {
                       <Award size={14} /> Results
                     </Button>
                   </Link>
+                  {h.status === 'draft' && (
+                    <Button variant="primary" size="sm" className="gap-1 px-3 py-1" onClick={() => handlePublish(h._id)}>
+                      <Rocket size={14} /> Publish
+                    </Button>
+                  )}
                 </div>
                 <div className="flex items-center gap-1">
                   <Link to={`/hackathons/${h._id}/edit`}>

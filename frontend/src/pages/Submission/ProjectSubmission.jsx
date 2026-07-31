@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import api from '../../config/axios';
@@ -10,17 +10,23 @@ import Input from '../../components/ui/Input';
 import Textarea from '../../components/ui/Textarea';
 import Button from '../../components/ui/Button';
 import Loader from '../../components/ui/Loader';
-import Badge from '../../components/ui/Badge';
 import { getApiData } from '../../utils/apiResponse';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Send, ExternalLink, Edit } from 'lucide-react';
 
+const getSubmissionWindow = (hackathon) => {
+  if (!hackathon) return { start: null, end: null };
+  const start = new Date(hackathon.submissionStart || hackathon.hackathonStart);
+  const end = new Date(hackathon.submissionDeadline || hackathon.hackathonEnd);
+  return { start, end };
+};
+
 const ProjectSubmission = () => {
   const { hackathonId } = useParams();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [submission, setSubmission] = useState(null);
   const [team, setTeam] = useState(null);
+  const [hackathon, setHackathon] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -37,25 +43,31 @@ const ProjectSubmission = () => {
   const fetchSubmissionAndTeam = async () => {
     setIsLoading(true);
     try {
-      // Get Team
-      const tRes = await api.get(`/hackathons/${hackathonId}/my-team`);
-      const myTeam = getApiData(tRes);
-      setTeam(myTeam);
+      const [hRes, tRes] = await Promise.all([
+        api.get(`/hackathons/${hackathonId}`),
+        api.get(`/hackathons/${hackathonId}/my-team`),
+      ]);
+      setHackathon(getApiData(hRes));
+      setTeam(getApiData(tRes));
 
-      // Get Submission
-      const response = await api.get(`/hackathons/${hackathonId}/my-submission`);
-      const sub = getApiData(response);
-      setSubmission(sub);
+      try {
+        const response = await api.get(`/hackathons/${hackathonId}/my-submission`);
+        const sub = getApiData(response);
+        setSubmission(sub);
 
-      if (sub) {
-        setValue('githubRepo', sub.githubRepo);
-        setValue('demoUrl', sub.demoUrl);
-        setValue('presentationUrl', sub.presentationUrl || '');
-        setValue('videoUrl', sub.videoUrl || '');
-        setValue('description', sub.description);
+        if (sub) {
+          setValue('githubRepo', sub.githubRepo);
+          setValue('demoUrl', sub.demoUrl || '');
+          setValue('presentationUrl', sub.presentationUrl || '');
+          setValue('videoUrl', sub.videoUrl || '');
+          setValue('description', sub.description);
+        }
+      } catch {
+        setSubmission(null);
       }
     } catch (err) {
-      setSubmission(null);
+      setTeam(null);
+      toast.error(err.message || 'Failed to load submission page.');
     } finally {
       setIsLoading(false);
     }
@@ -69,12 +81,10 @@ const ProjectSubmission = () => {
     setIsSubmitting(true);
     try {
       if (submission) {
-        // Edit existing submission
         await api.patch(`/submissions/${submission._id}`, data);
         toast.success('Project submission updated!');
         setIsEditMode(false);
       } else {
-        // Create new submission
         await api.post(`/hackathons/${hackathonId}/submissions`, data);
         toast.success('Project submitted successfully!');
       }
@@ -88,15 +98,22 @@ const ProjectSubmission = () => {
 
   if (isLoading) return <Loader size="lg" />;
 
-  const isLeader = team && team.leader?._id === user?.id;
+  const userId = String(user?.id || user?._id || '');
+  const leaderId = String(team?.leader?._id || team?.leader || '');
+  const isLeader = Boolean(team && userId && leaderId === userId);
 
-  // Render view-only state for non-leaders or when not in edit mode
+  const { start: windowStart, end: windowEnd } = getSubmissionWindow(hackathon);
+  const now = new Date();
+  const windowOpen = windowStart && windowEnd && now >= windowStart && now <= windowEnd;
+  const windowNotStarted = windowStart && now < windowStart;
+  const windowClosed = windowEnd && now > windowEnd;
+
   const renderViewOnly = () => (
     <div className="flex flex-col gap-6">
       <Card className="flex flex-col gap-4">
         <div className="flex justify-between items-center border-b border-border pb-3">
           <h3 className="font-bold text-base text-secondary">Submission Details</h3>
-          {isLeader && (
+          {isLeader && windowOpen && (
             <Button variant="secondary" size="sm" onClick={() => setIsEditMode(true)} className="gap-1.5">
               <Edit size={14} /> Update Links
             </Button>
@@ -110,12 +127,14 @@ const ProjectSubmission = () => {
               {submission.githubRepo} <ExternalLink size={14} />
             </a>
           </div>
-          <div>
-            <span className="text-slate-400 font-semibold block uppercase text-xs">Demo Landing / Deployment URL</span>
-            <a href={submission.demoUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium flex items-center gap-1 mt-0.5">
-              {submission.demoUrl} <ExternalLink size={14} />
-            </a>
-          </div>
+          {submission.demoUrl && (
+            <div>
+              <span className="text-slate-400 font-semibold block uppercase text-xs">Demo Landing / Deployment URL</span>
+              <a href={submission.demoUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium flex items-center gap-1 mt-0.5">
+                {submission.demoUrl} <ExternalLink size={14} />
+              </a>
+            </div>
+          )}
           {submission.presentationUrl && (
             <div>
               <span className="text-slate-400 font-semibold block uppercase text-xs">Presentation URL</span>
@@ -140,6 +159,10 @@ const ProjectSubmission = () => {
             {submission.description}
           </p>
         </div>
+
+        {windowClosed && (
+          <p className="text-xs text-amber-600 font-medium">Submission window is closed. Edits are locked.</p>
+        )}
       </Card>
     </div>
   );
@@ -162,10 +185,21 @@ const ProjectSubmission = () => {
             Create or join a team first
           </Link>
         </Card>
+      ) : !isLeader && !submission ? (
+        <Card className="text-center py-12">
+          <p className="text-sm text-slate-500">
+            Only the team leader <span className="font-semibold">{team.leader?.firstName}</span> can manage project submissions.
+          </p>
+        </Card>
+      ) : windowNotStarted ? (
+        <Card className="text-center py-12">
+          <p className="text-sm text-slate-500">
+            Submission window opens on {windowStart.toLocaleString()}.
+          </p>
+        </Card>
       ) : submission && !isEditMode ? (
         renderViewOnly()
-      ) : isLeader ? (
-        /* Edit or Create Submission Form */
+      ) : isLeader && windowOpen ? (
         <Card>
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <Input
@@ -178,7 +212,7 @@ const ProjectSubmission = () => {
 
             <Input
               id="demoUrl"
-              label="Project Demo URL (Landing / Deployment)"
+              label="Project Demo URL (Optional)"
               placeholder="https://project-demo.vercel.app"
               error={errors.demoUrl?.message}
               {...register('demoUrl')}
@@ -210,7 +244,7 @@ const ProjectSubmission = () => {
 
             <div className="flex items-center justify-end gap-3 mt-4 border-t border-border pt-4">
               {submission && (
-                <Button variant="secondary" onClick={() => setIsEditMode(false)}>
+                <Button type="button" variant="secondary" onClick={() => setIsEditMode(false)}>
                   Cancel
                 </Button>
               )}
@@ -219,6 +253,12 @@ const ProjectSubmission = () => {
               </Button>
             </div>
           </form>
+        </Card>
+      ) : windowClosed && !submission ? (
+        <Card className="text-center py-12">
+          <p className="text-sm text-slate-500">
+            Submission deadline has passed ({windowEnd.toLocaleString()}).
+          </p>
         </Card>
       ) : (
         <Card className="text-center py-12">

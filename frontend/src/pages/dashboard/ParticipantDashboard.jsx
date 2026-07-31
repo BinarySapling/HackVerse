@@ -5,24 +5,28 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Loader from '../../components/ui/Loader';
-import { getApiList } from '../../utils/apiResponse';
-import { Calendar, UserPlus, Users, Share2, Star } from 'lucide-react';
+import { getApiData, getApiList } from '../../utils/apiResponse';
+import { Calendar, UserPlus, Users, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const ParticipantDashboard = () => {
   const [hackathons, setHackathons] = useState([]);
   const [myRegistrations, setMyRegistrations] = useState([]);
+  const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const hRes = await api.get('/hackathons');
+        const [hRes, rRes, sRes] = await Promise.all([
+          api.get('/hackathons'),
+          api.get('/registrations/me'),
+          api.get('/dashboard/stats'),
+        ]);
         setHackathons(getApiList(hRes));
-
-        const rRes = await api.get('/registrations/me');
         setMyRegistrations(getApiList(rRes));
+        setStats(getApiData(sRes));
       } catch (err) {
         toast.error('Failed to load dashboard data.');
       } finally {
@@ -40,9 +44,12 @@ const ParticipantDashboard = () => {
     try {
       await api.post(`/hackathons/${hackathonId}/register`);
       toast.success('Successfully registered for the hackathon!');
-      // Refresh registrations
-      const rRes = await api.get('/registrations/me');
+      const [rRes, sRes] = await Promise.all([
+        api.get('/registrations/me'),
+        api.get('/dashboard/stats'),
+      ]);
       setMyRegistrations(getApiList(rRes));
+      setStats(getApiData(sRes));
     } catch (err) {
       toast.error(err.message || 'Registration failed.');
     }
@@ -52,14 +59,34 @@ const ParticipantDashboard = () => {
     <div className="flex flex-col gap-8">
       <div>
         <h2 className="text-xl font-bold text-secondary">Participant Arena</h2>
-        <p className="text-xs text-slate-400">Discover active hackathons, form development teams, and track project status.</p>
+        <p className="text-xs text-slate-400">Discover active hackathons, form teams, and track submissions.</p>
       </div>
+
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card className="p-4">
+            <div className="text-xs text-slate-400 font-semibold uppercase">Registered</div>
+            <div className="text-2xl font-bold text-secondary mt-1">{stats.registeredHackathons ?? 0}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-xs text-slate-400 font-semibold uppercase">Teams</div>
+            <div className="text-2xl font-bold text-secondary mt-1">{stats.teams ?? 0}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-xs text-slate-400 font-semibold uppercase">Submitted</div>
+            <div className="text-2xl font-bold text-secondary mt-1">{stats.submissionStatus?.submitted ?? 0}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-xs text-slate-400 font-semibold uppercase">Pending Submissions</div>
+            <div className="text-2xl font-bold text-secondary mt-1">{stats.submissionStatus?.pending ?? 0}</div>
+          </Card>
+        </div>
+      )}
 
       {isLoading ? (
         <Loader size="lg" />
       ) : (
         <div className="flex flex-col gap-8">
-          {/* Active Hackathons Grid */}
           <section className="flex flex-col gap-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Active Events</h3>
             {hackathons.length === 0 ? (
@@ -79,40 +106,35 @@ const ParticipantDashboard = () => {
                             {registered ? 'Registered' : h.status}
                           </Badge>
                         </div>
-                        <p className="text-xs text-slate-500">{h.tagline || 'No tagline set'}</p>
-                        <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-2">
+                        <p className="text-xs text-slate-500">{h.tagline || 'Build something amazing.'}</p>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-2 font-medium">
                           <Calendar size={14} />
                           <span>Ends: {new Date(h.hackathonEnd).toLocaleDateString()}</span>
                         </div>
                       </div>
 
-                      <div className="border-t border-border pt-4 flex justify-between items-center">
-                        <Link to={`/hackathons/${h.slug}`} className="text-xs text-primary font-semibold hover:underline">
-                          View details
-                        </Link>
-                        {registered ? (
-                          <div className="flex gap-2">
+                      <div className="border-t border-border pt-4 flex flex-wrap gap-2">
+                        {!registered ? (
+                          <Button size="sm" variant="primary" className="gap-1" onClick={() => handleRegister(h._id)}>
+                            <UserPlus size={14} /> Register
+                          </Button>
+                        ) : (
+                          <>
                             <Link to={`/hackathons/${h._id}/team`}>
-                              <Button variant="secondary" size="sm" className="gap-1">
-                                <Users size={12} /> Team
+                              <Button size="sm" variant="outline" className="gap-1">
+                                <Users size={14} /> Team
                               </Button>
                             </Link>
                             <Link to={`/hackathons/${h._id}/submit`}>
-                              <Button variant="primary" size="sm" className="gap-1">
-                                <Share2 size={12} /> Submission
+                              <Button size="sm" variant="primary" className="gap-1">
+                                <Share2 size={14} /> Submit
                               </Button>
                             </Link>
-                          </div>
-                        ) : (
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={() => handleRegister(h._id)}
-                            className="gap-1.5"
-                          >
-                            <UserPlus size={14} /> Register Event
-                          </Button>
+                          </>
                         )}
+                        <Link to={`/hackathons/${h.slug}`}>
+                          <Button size="sm" variant="secondary">Details</Button>
+                        </Link>
                       </div>
                     </Card>
                   );

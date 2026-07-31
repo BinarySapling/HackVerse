@@ -5,20 +5,25 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Loader from '../../components/ui/Loader';
-import { getApiList } from '../../utils/apiResponse';
-import { ClipboardCheck, Calendar, Award } from 'lucide-react';
+import { getApiData, getApiList } from '../../utils/apiResponse';
+import { ClipboardCheck, Award } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const JudgeDashboard = () => {
   const [evaluations, setEvaluations] = useState([]);
+  const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchEvaluations = async () => {
       setIsLoading(true);
       try {
-        const response = await api.get('/evaluations/me');
-        setEvaluations(getApiList(response));
+        const [evalRes, statsRes] = await Promise.all([
+          api.get('/evaluations/me'),
+          api.get('/dashboard/stats'),
+        ]);
+        setEvaluations(getApiList(evalRes));
+        setStats(getApiData(statsRes));
       } catch (err) {
         toast.error('Failed to load judge evaluations.');
       } finally {
@@ -42,6 +47,23 @@ const JudgeDashboard = () => {
         </Link>
       </div>
 
+      {stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Card className="p-4">
+            <div className="text-xs text-slate-400 font-semibold uppercase">Assigned Hackathons</div>
+            <div className="text-2xl font-bold text-secondary mt-1">{stats.assignedHackathons ?? 0}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-xs text-slate-400 font-semibold uppercase">Pending Evaluations</div>
+            <div className="text-2xl font-bold text-secondary mt-1">{stats.pendingEvaluations ?? 0}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-xs text-slate-400 font-semibold uppercase">Completed</div>
+            <div className="text-2xl font-bold text-secondary mt-1">{stats.completedEvaluations ?? 0}</div>
+          </Card>
+        </div>
+      )}
+
       {isLoading ? (
         <Loader size="lg" />
       ) : (
@@ -60,17 +82,23 @@ const JudgeDashboard = () => {
                       <h4 className="font-bold text-sm text-secondary">
                         Submission: {ev.submission?.team?.name || 'Assigned Project'}
                       </h4>
-                      <Badge variant="success">Score: {ev.totalScore}/30</Badge>
+                      <Badge variant="success">Score: {ev.totalScore}/60</Badge>
                     </div>
                     <p className="text-xs text-slate-400 italic">
-                      Remarks: "{ev.remarks || 'No remarks left'}"
+                      Remarks: &quot;{ev.remarks || 'No remarks left'}&quot;
                     </p>
-                    <div className="flex gap-4 text-xs text-slate-500 mt-2 font-medium">
-                      <span>Inn: {ev.innovationScore}/10</span>
-                      <span>Tech: {ev.technicalScore}/10</span>
-                      <span>Pres: {ev.presentationScore}/10</span>
+                    <div className="flex flex-wrap gap-3 text-xs text-slate-500 mt-2 font-medium">
+                      <span>Inn: {ev.innovationScore}</span>
+                      <span>UX: {ev.uiuxScore ?? 0}</span>
+                      <span>Tech: {ev.technicalScore}</span>
+                      <span>Pres: {ev.presentationScore}</span>
+                      <span>Code: {ev.codeQualityScore ?? 0}</span>
+                      <span>Solve: {ev.problemSolvingScore ?? 0}</span>
                     </div>
                   </div>
+                  <Link to={`/judge/submissions/${ev.submission?._id || ev.submission}/evaluate`} className="text-xs text-primary font-bold hover:underline flex items-center gap-1">
+                    <Award size={12} /> Edit Evaluation
+                  </Link>
                 </Card>
               ))}
             </div>

@@ -31,13 +31,25 @@ const HackathonCreate = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      // Dates should be formatted as ISO Strings
+      const judgeEmails = (data.judgeEmails || '')
+        .split(/[\n,]+/)
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean);
+
       const payload = {
         ...data,
+        judgeEmails,
+        maxTeams: data.maxTeams || undefined,
         registrationStart: new Date(data.registrationStart).toISOString(),
         registrationEnd: new Date(data.registrationEnd).toISOString(),
         hackathonStart: new Date(data.hackathonStart).toISOString(),
         hackathonEnd: new Date(data.hackathonEnd).toISOString(),
+        submissionStart: data.submissionStart
+          ? new Date(data.submissionStart).toISOString()
+          : undefined,
+        submissionDeadline: data.submissionDeadline
+          ? new Date(data.submissionDeadline).toISOString()
+          : undefined,
       };
 
       await api.post('/hackathons', payload);
@@ -123,6 +135,23 @@ const HackathonCreate = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
+              id="submissionStart"
+              type="datetime-local"
+              label="Submission Window Starts (optional)"
+              error={errors.submissionStart?.message}
+              {...register('submissionStart')}
+            />
+            <Input
+              id="submissionDeadline"
+              type="datetime-local"
+              label="Submission Deadline (optional)"
+              error={errors.submissionDeadline?.message}
+              {...register('submissionDeadline')}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Input
               id="minTeamSize"
               type="number"
               label="Minimum Team Capacity"
@@ -136,7 +165,22 @@ const HackathonCreate = () => {
               error={errors.maxTeamSize?.message}
               {...register('maxTeamSize', { valueAsNumber: true })}
             />
+            <Input
+              id="maxTeams"
+              type="number"
+              label="Max Teams (optional)"
+              error={errors.maxTeams?.message}
+              {...register('maxTeams', { valueAsNumber: true })}
+            />
           </div>
+
+          <Input
+            id="prizePool"
+            label="Prize Pool (optional)"
+            placeholder="e.g. $10,000"
+            error={errors.prizePool?.message}
+            {...register('prizePool')}
+          />
 
           <Input
             id="contactEmail"
@@ -153,6 +197,14 @@ const HackathonCreate = () => {
             placeholder="Code of conduct, evaluation guidelines..."
             error={errors.rules?.message}
             {...register('rules')}
+          />
+
+          <Textarea
+            id="judgeEmails"
+            label="Invite Judges"
+            placeholder="judge1@example.com, judge2@example.com"
+            error={errors.judgeEmails?.message}
+            {...register('judgeEmails')}
           />
 
           <div className="flex items-center justify-end gap-3 mt-4 border-t border-border pt-4">

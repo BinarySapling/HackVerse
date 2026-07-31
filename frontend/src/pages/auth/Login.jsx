@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { loginSchema } from '../../validations/auth';
 import Input from '../../components/ui/Input';
@@ -12,6 +12,7 @@ import { Sparkles } from 'lucide-react';
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -27,8 +28,12 @@ const Login = () => {
     try {
       const user = await login(data.email, data.password);
       toast.success(`Welcome back, ${user.firstName}!`);
-      // Redirect based on role
-      navigate(`/dashboard/${user.role}`);
+      const redirect = searchParams.get('redirect');
+      if (redirect && redirect.startsWith('/')) {
+        navigate(redirect);
+      } else {
+        navigate(`/dashboard/${user.role}`);
+      }
     } catch (err) {
       toast.error(err.message || 'Login failed. Please check your credentials.');
     } finally {
