@@ -36,9 +36,14 @@ if (config.trustProxy) {
 app.use(requestIdMiddleware);
 app.use(helmet());
 
+// Allow listed frontend URLs (Vercel / localhost). Reflect request origin when "*" is set.
+const corsOrigin = config.allowedOrigins.includes('*')
+  ? true
+  : config.allowedOrigins;
+
 app.use(
   cors({
-    origin: config.allowedOrigins,
+    origin: corsOrigin,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
     credentials: true,
