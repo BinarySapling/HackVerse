@@ -10,11 +10,13 @@ import { isAdmin } from '../utils/authorization.js';
 export const createTeam = async (leaderId, hackathonId, payload) => {
   const { name } = payload;
 
-  // 1. Verify that the leader is registered for the hackathon
+  // 1. Verify that the leader is registered (approved) for the hackathon
   const registration = await registrationRepository.findByUserAndHackathon(leaderId, hackathonId);
-  if (!registration) {
+  if (!registration || registration.status !== 'registered') {
     throw new AppError(
-      "You must be registered for this hackathon to create a team",
+      registration?.status === 'pending'
+        ? 'Your registration is still pending approval'
+        : 'You must be an approved registrant to create a team',
       HttpStatus.BAD_REQUEST,
       ErrorCodes.VALIDATION_ERROR
     );
@@ -95,12 +97,16 @@ export const addMember = async (teamId, leaderId, memberId) => {
 
   const hackathonId = team.hackathon._id || team.hackathon;
 
-  // 3. Verify added member is registered for the hackathon
+  // 3. Verify added member has approved registration for the hackathon
   const registration = await registrationRepository.findByUserAndHackathon(memberId, hackathonId);
-  if (!registration) {
+  if (!registration || registration.status !== 'registered') {
     throw new AppError(
-      "Member is not registered for this hackathon",
-      HttpStatus.BAD_REQUEST,
+      !registration
+        ? 'Member is not registered for this hackathon'
+        : registration.status === 'pending'
+          ? 'Member registration is still pending approval'
+          : 'Member is not an approved registrant for this hackathon',
+      !registration ? HttpStatus.BAD_REQUEST : HttpStatus.FORBIDDEN,
       ErrorCodes.VALIDATION_ERROR
     );
   }
@@ -245,11 +251,101 @@ export const deleteTeam = async (teamId, userId, userRole) => {
   logger.info(`Team Deleted: "${team.name}" [ID: ${teamId}] [Deleted by: ${userId}]`);
 };
 
+export const updateTeam = async (teamId, leaderId, payload) => {
+  const { name } = payload;
+
+  const team = await teamRepository.findById(teamId);
+  if (!team || team.isDeleted) {
+    throw new AppError('Team not found', HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND);
+  }
+
+  const teamLeaderId = team.leader._id || team.leader;
+  if (teamLeaderId.toString() !== leaderId.toString()) {
+    throw new AppError(
+      'Access denied: Only the team leader can update the team',
+      HttpStatus.FORBIDDEN,
+      ErrorCodes.FORBIDDEN
+    );
+  }
+
+  const hackathonId = team.hackathon._id || team.hackathon;
+  const nameExists = await teamRepository.existsByNameInHackathon(name, hackathonId, teamId);
+  if (nameExists) {
+    throw new AppError(
+      'Team name is already taken in this hackathon',
+      HttpStatus.CONFLICT,
+      ErrorCodes.CONFLICT
+    );
+  }
+
+  const updatedTeam = await teamRepository.updateName(teamId, name.trim());
+  logger.info(`Team Updated: "${name}" [ID: ${teamId}] [Leader: ${leaderId}]`);
+  return updatedTeam;
+};
+
+export const transferLeadership = async (teamId, leaderId, newLeaderId) => {
+  const team = await teamRepository.findById(teamId);
+  if (!team || team.isDeleted) {
+    throw new AppError('Team not found', HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND);
+  }
+
+  const currentLeaderId = (team.leader._id || team.leader).toString();
+  if (currentLeaderId !== leaderId.toString()) {
+    throw new AppError(
+      'Only the current leader can transfer leadership',
+      HttpStatus.FORBIDDEN,
+      ErrorCodes.FORBIDDEN
+    );
+  }
+
+  const isMember = team.members.some((m) => (m._id || m).toString() === newLeaderId.toString());
+  if (!isMember) {
+    throw new AppError(
+      'New leader must already be a team member',
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
+  if (newLeaderId.toString() === currentLeaderId) {
+    throw new AppError(
+      'User is already the team leader',
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
+  const updated = await teamRepository.transferLeadership(teamId, newLeaderId);
+  logger.info(`Leadership transferred on team ${teamId} to ${newLeaderId}`);
+  return updated;
+};
+
+export const getHackathonTeams = async (hackathonId, userId, userRole) => {
+  const hackathon = await hackathonRepository.findById(hackathonId);
+  if (!hackathon || hackathon.isDeleted) {
+    throw new AppError('Hackathon not found', HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND);
+  }
+
+  const organizerId = (hackathon.organizer._id || hackathon.organizer).toString();
+  if (!isAdmin(userRole) && organizerId !== userId.toString()) {
+    throw new AppError(
+      'Only the organizer can view teams',
+      HttpStatus.FORBIDDEN,
+      ErrorCodes.FORBIDDEN
+    );
+  }
+
+  return teamRepository.findByHackathon(hackathonId);
+};
+
 export default {
   createTeam,
   getMyTeam,
   addMember,
   removeMember,
   leaveTeam,
-  deleteTeam
+  deleteTeam,
+  updateTeam,
+  transferLeadership,
+  getHackathonTeams,
 };

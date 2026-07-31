@@ -5,20 +5,43 @@ import {
   updateSubmission,
   deleteSubmission,
   getOrganizerSubmissions,
+  reviewSubmission,
   getJudgeSubmissions
 } from '../controllers/submission.controller.js';
 import authenticate from '../middleware/authenticate.js';
 import authorize from '../middleware/authorize.js';
 import validate from '../middleware/validate.js';
+import parseSubmissionBody from '../middleware/parseSubmissionBody.js';
+import { uploadSubmissionFiles } from '../middleware/upload.js';
 import { RolePolicies } from '../constants/permissions.js';
+import AppError from '../errors/AppError.js';
+import HttpStatus from '../constants/httpStatus.js';
+import ErrorCodes from '../errors/ErrorCodes.js';
 import {
   createSubmissionSchema,
   updateSubmissionSchema,
+  reviewSubmissionSchema,
   validateHackathonIdParam,
   validateSubmissionIdParam
 } from '../validators/submission.validator.js';
 
 const router = express.Router();
+
+const handleSubmissionUpload = (req, res, next) => {
+  uploadSubmissionFiles(req, res, (err) => {
+    if (!err) return next();
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return next(
+        new AppError(
+          'Each file must be 10MB or smaller',
+          HttpStatus.BAD_REQUEST,
+          ErrorCodes.VALIDATION_ERROR
+        )
+      );
+    }
+    return next(err);
+  });
+};
 
 // Routes tied to a specific hackathon ID
 router.post(
@@ -26,6 +49,8 @@ router.post(
   authenticate,
   authorize(RolePolicies.PARTICIPANT_ONLY),
   validateHackathonIdParam,
+  handleSubmissionUpload,
+  parseSubmissionBody,
   validate(createSubmissionSchema),
   createSubmission
 );
@@ -60,8 +85,19 @@ router.patch(
   authenticate,
   authorize(RolePolicies.PARTICIPANT_ONLY),
   validateSubmissionIdParam,
+  handleSubmissionUpload,
+  parseSubmissionBody,
   validate(updateSubmissionSchema),
   updateSubmission
+);
+
+router.patch(
+  '/submissions/:submissionId/review',
+  authenticate,
+  authorize(RolePolicies.ORGANIZER_OR_ADMIN),
+  validateSubmissionIdParam,
+  validate(reviewSubmissionSchema),
+  reviewSubmission
 );
 
 router.delete(

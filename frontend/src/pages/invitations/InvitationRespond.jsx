@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../config/axios';
-import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 
@@ -39,30 +38,38 @@ const InvitationRespond = ({ type }) => {
   };
 
   return (
-    <div className="max-w-lg mx-auto py-10">
-      <Card className="p-6 space-y-4">
-        <div>
-          <h1 className="text-xl font-bold text-secondary">
-            {type === 'team' ? 'Team Invitation' : 'Judge Invitation'}
-          </h1>
-          <p className="text-sm text-slate-500">
-            Accept to join automatically, or decline to ignore this invite.
-          </p>
-        </div>
+    <div className="min-h-[70vh] flex items-center justify-center px-4 page-glow">
+      <div className="w-full max-w-md">
+        <p className="text-[11px] tracking-[0.32em] uppercase text-primary-soft/80 mb-4 font-medium">
+          Invitation
+        </p>
+        <h1 className="text-3xl font-display font-semibold tracking-tight">
+          {type === 'team' ? 'Team invitation' : 'Judge invitation'}
+        </h1>
+        <p className="text-sm text-muted mt-3 leading-relaxed">
+          Accept to join automatically, or decline to ignore this invite.
+        </p>
+
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/25 to-transparent my-8" />
 
         {!token ? (
-          <p className="text-sm text-red-500">Invalid or missing invitation token.</p>
+          <p className="text-sm text-danger">Invalid or missing invitation token.</p>
         ) : (
           <div className="flex gap-3">
             <Button disabled={loading} onClick={() => respond(true)} className="flex-1">
               Accept
             </Button>
-            <Button disabled={loading} variant="outline" onClick={() => respond(false)} className="flex-1">
+            <Button
+              disabled={loading}
+              variant="outline"
+              onClick={() => respond(false)}
+              className="flex-1"
+            >
               Decline
             </Button>
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 };

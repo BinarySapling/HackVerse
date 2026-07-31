@@ -17,6 +17,17 @@ const submissionSchema = new mongoose.Schema(
       required: [true, 'GitHub repository URL is required'],
       trim: true
     },
+    projectName: {
+      type: String,
+      trim: true,
+      default: null
+    },
+    techStack: [
+      {
+        type: String,
+        trim: true
+      }
+    ],
     demoUrl: {
       type: String,
       trim: true,
@@ -32,10 +43,30 @@ const submissionSchema = new mongoose.Schema(
       trim: true,
       default: null
     },
+    screenshotUrl: {
+      type: String,
+      trim: true,
+      default: null
+    },
     description: {
       type: String,
-      required: [true, 'Project description is required'],
+      required: [true, 'Project summary is required'],
       trim: true
+    },
+    problemStatement: {
+      type: String,
+      required: [true, 'Problem statement is required'],
+      trim: true
+    },
+    solution: {
+      type: String,
+      required: [true, 'Solution description is required'],
+      trim: true
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'under_review', 'approved', 'rejected'],
+      default: 'pending'
     },
     submittedAt: {
       type: Date,
@@ -56,8 +87,6 @@ submissionSchema.index({ team: 1 }, { unique: true });
 
 // Optimize query performance for routing lookups
 submissionSchema.index({ hackathon: 1 });
-submissionSchema.index({ team: 1 });
-
 const Submission = mongoose.model('Submission', submissionSchema);
 
 export default Submission;

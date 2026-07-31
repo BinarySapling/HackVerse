@@ -72,7 +72,8 @@ export const authenticate = asyncHandler(async (req, res, next) => {
     lastName: user.lastName,
     email: user.email,
     role: user.role,
-    isVerified: user.isVerified
+    isVerified: user.isVerified,
+    avatar: user.avatar || null,
   };
 
   logger.info(`Authentication success: validated user session "${user.email}"`, logMetadata);

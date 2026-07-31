@@ -83,11 +83,43 @@ export const publishHackathon = asyncHandler(async (req, res) => {
   );
 });
 
+export const openRegistration = asyncHandler(async (req, res) => {
+  const hackathon = await hackathonService.openRegistration(
+    req.params.id,
+    req.user.id,
+    req.user.role
+  );
+
+  return ApiResponse.success(
+    res,
+    HttpStatus.OK,
+    'Registration opened successfully',
+    hackathon
+  );
+});
+
+export const closeRegistration = asyncHandler(async (req, res) => {
+  const hackathon = await hackathonService.closeRegistration(
+    req.params.id,
+    req.user.id,
+    req.user.role
+  );
+
+  return ApiResponse.success(
+    res,
+    HttpStatus.OK,
+    'Registration closed successfully',
+    hackathon
+  );
+});
+
 export default {
   createHackathon,
   getHackathons,
   getHackathonBySlug,
   updateHackathon,
   deleteHackathon,
-  publishHackathon
+  publishHackathon,
+  openRegistration,
+  closeRegistration,
 };

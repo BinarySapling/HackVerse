@@ -2,10 +2,13 @@ import express from 'express';
 import {
   createTeam,
   getMyTeam,
+  getHackathonTeams,
   addMember,
   removeMember,
   leaveTeam,
-  deleteTeam
+  deleteTeam,
+  updateTeam,
+  transferLeadership,
 } from '../controllers/team.controller.js';
 import authenticate from '../middleware/authenticate.js';
 import authorize from '../middleware/authorize.js';
@@ -13,15 +16,16 @@ import validate from '../middleware/validate.js';
 import { RolePolicies } from '../constants/permissions.js';
 import {
   createTeamSchema,
+  updateTeamSchema,
   addMemberSchema,
   removeMemberSchema,
+  transferLeadershipSchema,
   validateHackathonIdParam,
-  validateTeamIdParam
+  validateTeamIdParam,
 } from '../validators/team.validator.js';
 
 const router = express.Router();
 
-// Routes tied to a specific hackathon ID
 router.post(
   '/hackathons/:hackathonId/teams',
   authenticate,
@@ -39,7 +43,14 @@ router.get(
   getMyTeam
 );
 
-// Routes tied to a specific team ID
+router.get(
+  '/hackathons/:hackathonId/teams',
+  authenticate,
+  authorize(RolePolicies.ORGANIZER_OR_ADMIN),
+  validateHackathonIdParam,
+  getHackathonTeams
+);
+
 router.patch(
   '/teams/:teamId/members',
   authenticate,
@@ -56,6 +67,24 @@ router.patch(
   validateTeamIdParam,
   validate(removeMemberSchema),
   removeMember
+);
+
+router.patch(
+  '/teams/:teamId',
+  authenticate,
+  authorize(RolePolicies.PARTICIPANT_ONLY),
+  validateTeamIdParam,
+  validate(updateTeamSchema),
+  updateTeam
+);
+
+router.patch(
+  '/teams/:teamId/transfer-leadership',
+  authenticate,
+  authorize(RolePolicies.PARTICIPANT_ONLY),
+  validateTeamIdParam,
+  validate(transferLeadershipSchema),
+  transferLeadership
 );
 
 router.patch(
