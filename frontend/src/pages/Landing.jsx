@@ -450,8 +450,6 @@ const Landing = () => {
           </div>
         </section>
 
-        </section>
-
         {/* Previous winners */}
         <section className="relative py-16 sm:py-20 bg-gradient-to-b from-[#1a1028]/60 via-[#15101f]/40 to-transparent">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -635,8 +633,6 @@ const Landing = () => {
               ))}
             </div>
           </div>
-        </section>
-
         </section>
 
         {/* Testimonials */}
