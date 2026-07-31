@@ -83,6 +83,7 @@ const AppRoutes = () => {
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard/organizer" element={<OrganizerDashboard />} />
             <Route path="/dashboard/admin" element={<AdminDashboard />} />
+            <Route path="/organizer/hackathons" element={<HackathonList />} />
             <Route path="/hackathons/:hackathonId/results" element={<OrganizerResults />} />
           </Route>
         </Route>

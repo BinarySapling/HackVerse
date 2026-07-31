@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from './ui/Button';
-import { Sparkles, LogOut, LayoutDashboard, Menu, X } from 'lucide-react';
+import BrandLogo from './BrandLogo';
+import { LogOut, LayoutDashboard, Menu, X } from 'lucide-react';
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -30,12 +31,7 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-40 w-full bg-white border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 text-primary font-bold text-lg select-none">
-          <div className="bg-primary text-white p-1.5 rounded-lg">
-            <Sparkles size={18} />
-          </div>
-          <span>HackVerse</span>
-        </Link>
+        <BrandLogo size="md" />
 
         <nav className="hidden md:flex items-center gap-2 text-sm font-medium">
           <NavLink to="/" className={navLinkClass}>Home</NavLink>

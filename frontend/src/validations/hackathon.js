@@ -13,6 +13,12 @@ export const hackathonSchema = z.object({
   description: z
     .string()
     .min(1, 'Description is required'),
+  banner: z
+    .string()
+    .url('Please enter a valid image URL')
+    .or(z.literal(''))
+    .optional()
+    .nullable(),
   registrationStart: z
     .string()
     .min(1, 'Registration start date is required'),

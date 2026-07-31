@@ -76,6 +76,16 @@ const HackathonDetail = () => {
         <ArrowLeft size={14} /> Back to Hackathons
       </Link>
 
+      {hackathon.banner && (
+        <div className="w-full overflow-hidden rounded-lg border border-border bg-slate-100">
+          <img
+            src={hackathon.banner}
+            alt={`${hackathon.title} poster`}
+            className="w-full max-h-72 object-cover"
+          />
+        </div>
+      )}
+
       {/* Hero Header */}
       <div className="bg-white border border-border p-6 md:p-8 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between items-start gap-6">
         <div className="flex flex-col gap-3">
@@ -190,6 +200,28 @@ const HackathonDetail = () => {
               <span className="text-secondary font-bold">{hackathon.maxTeamSize} member(s)</span>
             </div>
           </Card>
+
+          {(hackathon.prizePool || (hackathon.prizes && hackathon.prizes.length > 0)) && (
+            <Card className="flex flex-col gap-4">
+              <h3 className="text-base font-bold text-secondary flex items-center gap-2">
+                <Award size={16} /> Prizes
+              </h3>
+              {hackathon.prizePool && (
+                <p className="text-sm text-secondary font-bold">Total pool: {hackathon.prizePool}</p>
+              )}
+              {hackathon.prizes?.length > 0 && (
+                <ul className="flex flex-col gap-3">
+                  {hackathon.prizes.map((prize, index) => (
+                    <li key={index} className="text-sm border-t border-border pt-3 first:border-0 first:pt-0">
+                      <p className="font-bold text-secondary">{prize.title}</p>
+                      {prize.value && <p className="text-primary font-semibold">{prize.value}</p>}
+                      {prize.description && <p className="text-xs text-slate-500 mt-1">{prize.description}</p>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          )}
         </div>
       </div>
     </div>
