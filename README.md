@@ -372,4 +372,4 @@ HackVerse/
 
 ## License
 
-This project is developed for academic and educational purposes. Refer to your institution's guidelines for usage and distribution policies.
+This project is developed for academic and educational purposes. 
