@@ -230,8 +230,9 @@ const Landing = () => {
             alt=""
             className="h-full w-full object-cover object-[58%_center]"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B] via-[#09090B]/72 to-[#09090B]/18" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-[#09090B]/45" />
+          <div className="absolute inset-0 bg-[#09090B]/38" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B] via-[#09090B]/88 to-[#09090B]/58" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-[#09090B]/36 to-[#09090B]/72" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center pb-28">
@@ -273,7 +274,7 @@ const Landing = () => {
             className="relative hidden lg:flex items-center justify-center min-h-[340px]"
           >
             <div className="absolute inset-10 rounded-full bg-primary/20 blur-3xl" />
-            <div className="relative float-slow pulse-glow rounded-[2rem] bg-[#121018]/70 p-8 backdrop-blur-sm">
+            <div className="relative float-slow pulse-glow rounded-[2rem] bg-[#100d16]/90 p-8 shadow-2xl shadow-black/45 ring-1 ring-white/[0.1] backdrop-blur-xl">
               <BrandLogo to={null} size="hero" showText={false} />
             </div>
           </motion.div>
@@ -316,8 +317,9 @@ const Landing = () => {
             alt=""
             className="absolute inset-0 h-full w-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B]/95 via-[#09090B]/72 to-[#09090B]/35" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-[#09090B]/65" />
+          <div className="absolute inset-0 bg-[#09090B]/45" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B] via-[#09090B]/86 to-[#09090B]/68" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-[#09090B]/28 to-[#09090B]/78" />
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -359,7 +361,7 @@ const Landing = () => {
                   >
                     <Link
                       to={hackathonPath(h)}
-                      className="group flex flex-col sm:flex-row gap-4 p-5 rounded-2xl bg-[#121018]/80 ring-1 ring-white/[0.06] hover:ring-primary/30 transition-all"
+                      className="group flex flex-col sm:flex-row gap-4 p-5 rounded-2xl bg-[#100d16]/92 shadow-xl shadow-black/25 ring-1 ring-white/[0.1] backdrop-blur-xl transition-all hover:bg-[#15111d]/95 hover:ring-primary/35"
                     >
                       <div className="relative h-28 sm:h-24 sm:w-28 shrink-0 overflow-hidden rounded-xl bg-[#14101c]">
                         {h.banner ? (
@@ -408,8 +410,9 @@ const Landing = () => {
             alt=""
             className="absolute inset-0 h-full w-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B]/96 via-[#09090B]/76 to-[#09090B]/42" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-[#09090B]/70" />
+          <div className="absolute inset-0 bg-[#09090B]/52" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B] via-[#09090B]/88 to-[#09090B]/72" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-[#09090B]/35 to-[#09090B]/82" />
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -440,7 +443,7 @@ const Landing = () => {
             ) : upcoming.length === 0 ? (
               <p className="text-sm text-muted">No upcoming events scheduled yet.</p>
             ) : (
-              <ul className="flex flex-col divide-y divide-white/[0.06]">
+              <ul className="grid grid-cols-1 gap-3 sm:gap-4">
                 {upcoming.map((h, index) => (
                   <motion.li
                     key={h._id}
@@ -451,11 +454,11 @@ const Landing = () => {
                   >
                     <Link
                       to={hackathonPath(h)}
-                      className="group flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 py-5 hover:bg-white/[0.02] -mx-2 px-2 rounded-xl transition-colors"
+                      className="group grid grid-cols-1 gap-3 rounded-2xl bg-[#100d16]/92 p-4 shadow-xl shadow-black/25 ring-1 ring-white/[0.1] backdrop-blur-xl transition-all hover:bg-[#15111d]/95 hover:ring-primary/35 sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-center sm:gap-6 sm:p-5"
                     >
                       <time
                         dateTime={h.hackathonStart}
-                        className="font-mono text-xs text-primary-soft tracking-wide shrink-0 sm:w-36"
+                        className="font-mono text-xs text-primary-soft tracking-wide"
                       >
                         {new Date(h.hackathonStart).toLocaleDateString(undefined, {
                           month: 'short',
@@ -468,10 +471,10 @@ const Landing = () => {
                           {h.title}
                         </p>
                         {h.tagline && (
-                          <p className="text-sm text-muted mt-0.5 line-clamp-1">{h.tagline}</p>
+                          <p className="text-sm text-muted mt-0.5 line-clamp-2 sm:line-clamp-1">{h.tagline}</p>
                         )}
                       </div>
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-muted group-hover:text-primary-soft transition-colors shrink-0">
+                      <span className="inline-flex w-fit items-center gap-1 text-xs font-medium text-muted transition-colors group-hover:text-primary-soft sm:justify-self-end">
                         Details <ArrowRight size={12} />
                       </span>
                     </Link>
@@ -489,8 +492,9 @@ const Landing = () => {
             alt=""
             className="absolute inset-0 h-full w-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B]/96 via-[#09090B]/72 to-[#09090B]/34" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-[#09090B]/65" />
+          <div className="absolute inset-0 bg-[#09090B]/48" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B] via-[#09090B]/86 to-[#09090B]/68" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-[#09090B]/30 to-[#09090B]/78" />
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -524,7 +528,7 @@ const Landing = () => {
                     viewport={{ once: true }}
                     transition={{ delay: index * 0.06, duration: 0.4 }}
                   >
-                    <div className="flex flex-col h-full p-5 rounded-2xl bg-[#121018]/80 ring-1 ring-white/[0.06]">
+                    <div className="flex flex-col h-full p-5 rounded-2xl bg-[#100d16]/92 shadow-xl shadow-black/25 ring-1 ring-white/[0.1] backdrop-blur-xl">
                       <p className="text-xs font-mono text-primary-soft tracking-wide mb-2">
                         {new Date(h.hackathonEnd || h.hackathonStart).toLocaleDateString(undefined, {
                           month: 'short',
@@ -569,8 +573,9 @@ const Landing = () => {
             alt=""
             className="absolute inset-0 h-full w-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B]/95 via-[#09090B]/72 to-[#09090B]/40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-[#09090B]/70" />
+          <div className="absolute inset-0 bg-[#09090B]/52" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B] via-[#09090B]/88 to-[#09090B]/72" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-[#09090B]/35 to-[#09090B]/82" />
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -614,8 +619,9 @@ const Landing = () => {
                     className="absolute inset-0 h-full w-full object-cover"
                     style={{ objectPosition: section.imagePosition }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#09090B]/96 via-[#09090B]/68 to-[#09090B]/22" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-[#09090B]/70" />
+                  <div className="absolute inset-0 bg-[#09090B]/48" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#09090B] via-[#09090B]/84 to-[#09090B]/66" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-[#09090B]/32 to-[#09090B]/80" />
                 </>
               )}
               <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
@@ -628,13 +634,13 @@ const Landing = () => {
                     reverse ? 'lg:[&>*:first-child]:order-2' : ''
                   }`}
                 >
-                  <div className={`lg:col-span-5 ${hasImage ? 'rounded-2xl bg-[#09090B]/55 p-6 sm:p-8 backdrop-blur-sm ring-1 ring-white/[0.08]' : ''}`}>
+                  <div className={`lg:col-span-5 ${hasImage ? 'rounded-2xl bg-[#09090B]/88 p-6 shadow-xl shadow-black/25 ring-1 ring-white/[0.11] backdrop-blur-xl sm:p-8' : ''}`}>
                     <p className="font-mono text-sm text-primary-soft tracking-widest mb-3">{section.step}</p>
                     <h3 className="text-3xl sm:text-4xl font-display font-bold leading-tight">{section.title}</h3>
                     <p className="text-lg text-secondary/90 mt-4">{section.lead}</p>
                   </div>
 
-                  <div className={`lg:col-span-7 ${hasImage ? 'rounded-2xl bg-[#09090B]/55 p-6 sm:p-8 backdrop-blur-sm ring-1 ring-white/[0.08]' : ''}`}>
+                  <div className={`lg:col-span-7 ${hasImage ? 'rounded-2xl bg-[#09090B]/88 p-6 shadow-xl shadow-black/25 ring-1 ring-white/[0.11] backdrop-blur-xl sm:p-8' : ''}`}>
                     <p className="text-muted text-base sm:text-lg leading-relaxed">{section.body}</p>
                     <ul className="mt-8 space-y-3">
                       {section.points.map((point) => (
@@ -723,7 +729,7 @@ const Landing = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.08, duration: 0.4 }}
-                  className="flex flex-col gap-4 p-6 rounded-2xl bg-[#121018]/70 ring-1 ring-white/[0.06]"
+                  className="flex flex-col gap-4 p-6 rounded-2xl bg-[#100d16]/92 shadow-xl shadow-black/20 ring-1 ring-white/[0.1] backdrop-blur-xl"
                 >
                   <Quote size={18} className="text-primary-soft/60" />
                   <p className="text-sm text-secondary/90 leading-relaxed flex-1">&ldquo;{item.quote}&rdquo;</p>
