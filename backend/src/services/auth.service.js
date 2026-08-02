@@ -333,7 +333,27 @@ export const requestPasswordReset = async (email) => {
   const { token } = await passwordResetService.createPasswordResetToken(user._id);
   const resetUrl = `${config.frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
 
-  await emailService.sendPasswordResetEmail({ user, resetUrl });
+  const emailResult = await emailService.sendPasswordResetEmail({ user, resetUrl });
+  if (emailResult?.skipped || emailResult?.failed) {
+    logger.error('Password reset email was not delivered', {
+      to: user.email,
+      reason: emailResult?.reason,
+    });
+
+    if (config.nodeEnv !== 'production') {
+      logger.warn(`DEV password reset link for ${user.email}: ${resetUrl}`);
+      return { sent: false, resetUrl, reason: emailResult?.reason };
+    }
+
+    throw new AppError(
+      emailResult?.reason
+        ? `Could not send reset email: ${emailResult.reason}`
+        : 'Could not send reset email. Check SMTP configuration.',
+      HttpStatus.SERVICE_UNAVAILABLE,
+      ErrorCodes.INTERNAL_ERROR
+    );
+  }
+
   return { sent: true };
 };
 

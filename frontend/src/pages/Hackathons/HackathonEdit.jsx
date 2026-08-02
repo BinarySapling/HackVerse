@@ -230,7 +230,7 @@ const HackathonEdit = () => {
             <div className="flex flex-col gap-3">
               <div>
                 <p className="text-sm font-semibold text-secondary">Poster / Banner</p>
-                <p className="text-xs text-muted">Upload an image or paste a URL (optional).</p>
+                <p className="text-xs text-muted">Upload an image to Cloudinary or paste a URL (optional).</p>
               </div>
               {bannerPreview && (
                 <img

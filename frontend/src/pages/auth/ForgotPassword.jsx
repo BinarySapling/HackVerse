@@ -17,7 +17,12 @@ const ForgotPassword = () => {
     if (!email) return toast.error('Please enter your email address.');
     setIsLoading(true);
     try {
-      await api.post('/auth/forgot-password', { email: email.trim().toLowerCase() });
+      const response = await api.post('/auth/forgot-password', { email: email.trim().toLowerCase() });
+      if (response?.data?.resetUrl) {
+        toast.success('Email is not configured locally. Opening your reset link.');
+        window.location.href = response.data.resetUrl;
+        return;
+      }
       toast.success('If that email is registered, a reset link has been sent.');
     } catch (err) {
       toast.error(err.message || 'Could not send reset email.');

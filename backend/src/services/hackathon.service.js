@@ -1,5 +1,3 @@
-import path from 'path';
-import fs from 'fs';
 import hackathonRepository from '../repositories/hackathon.repository.js';
 import AppError from '../errors/AppError.js';
 import HttpStatus from '../constants/httpStatus.js';
@@ -10,7 +8,6 @@ import User from '../models/User.js';
 import Roles from '../constants/roles.js';
 import { isAdmin, isOwner } from '../utils/authorization.js';
 import emailService from './email.service.js';
-import { bannersDir } from '../middleware/upload.js';
 
 // Convert a string to an URL-safe slug
 const slugify = (text) => {
@@ -113,16 +110,6 @@ const assertHackathonAccess = (hackathon, userId, userRole) => {
       HttpStatus.FORBIDDEN,
       ErrorCodes.FORBIDDEN
     );
-  }
-};
-
-const removeLocalBanner = (bannerPath) => {
-  if (!bannerPath || !bannerPath.startsWith('/uploads/banners/')) {
-    return;
-  }
-  const filePath = path.join(bannersDir, path.basename(bannerPath));
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
   }
 };
 
@@ -319,10 +306,6 @@ export const updateHackathon = async (hackathonId, userId, userRole, updatePaylo
 
   // 5. Filter out immutable columns to prevent overrides
   const { organizer, slug, isDeleted, ...cleanPayload } = updatePayload;
-
-  if (cleanPayload.banner && cleanPayload.banner !== hackathon.banner) {
-    removeLocalBanner(hackathon.banner);
-  }
 
   const updatedHackathon = await hackathonRepository.update(hackathonId, cleanPayload);
 

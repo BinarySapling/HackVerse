@@ -103,6 +103,8 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/health', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
 app.use('/api/v1/hackathons', hackathonRoutes);
 app.use('/api/v1', registrationRoutes);
 app.use('/api/v1', teamRoutes);

@@ -10,7 +10,7 @@ import Textarea from '../../components/ui/Textarea';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Upload, Image as ImageIcon, X } from 'lucide-react';
 
 const emptyPrize = () => ({ title: '', value: '', description: '' });
 
@@ -78,6 +78,14 @@ const HackathonCreate = () => {
     if (!file) return;
     setBannerFile(file);
     setBannerPreview(URL.createObjectURL(file));
+  };
+
+  const removeBannerFile = () => {
+    if (bannerPreview && bannerFile) {
+      URL.revokeObjectURL(bannerPreview);
+    }
+    setBannerFile(null);
+    setBannerPreview(null);
   };
 
   const onSubmit = async (data) => {
@@ -197,26 +205,61 @@ const HackathonCreate = () => {
 
           <div className="flex flex-col gap-3">
             <div>
-              <p className="text-sm font-semibold text-secondary">Poster / Banner</p>
-              <p className="text-xs text-muted">Upload an image or paste a URL (optional).</p>
+              <p className="text-sm font-semibold text-secondary">Poster / Banner Image</p>
+              <p className="text-xs text-muted">Upload a photo from your local computer to Cloudinary or provide an image URL.</p>
             </div>
-            {bannerPreview && (
-              <img
-                src={bannerPreview}
-                alt=""
-                className="h-36 w-full rounded-xl object-cover ring-1 ring-white/[0.08]"
+
+            {/* Local Photo Upload Box */}
+            <div className="relative rounded-2xl border-2 border-dashed border-white/10 hover:border-primary/50 bg-surfaceDark/60 p-5 transition-all flex flex-col items-center justify-center text-center group cursor-pointer">
+              <input
+                id="bannerFile"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleBannerFileChange}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                title="Choose photo from local system"
               />
-            )}
-            <input
-              id="bannerFile"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={handleBannerFileChange}
-              className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary/20 file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-soft hover:file:bg-primary/30"
-            />
+              {bannerPreview ? (
+                <div className="relative w-full flex flex-col items-center">
+                  <img
+                    src={bannerPreview}
+                    alt="Poster Preview"
+                    className="h-44 w-full rounded-xl object-cover ring-1 ring-white/10 shadow-md"
+                  />
+                  <div className="mt-3 flex items-center gap-2 z-20">
+                    <span className="text-xs text-primary-soft font-medium flex items-center gap-1">
+                      <ImageIcon size={14} /> {bannerFile ? bannerFile.name : 'Image preview'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeBannerFile();
+                      }}
+                      className="text-xs text-danger hover:underline font-semibold flex items-center gap-1 bg-surfaceDark px-2.5 py-1 rounded-md border border-white/10"
+                    >
+                      <X size={13} /> Remove photo
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-3 pointer-events-none">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 text-primary-soft flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Upload size={22} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-secondary">
+                      <span className="text-primary-soft font-semibold">Click to upload photo</span> from your local system
+                    </p>
+                    <p className="text-xs text-muted mt-0.5">Supports PNG, JPG, WebP, or GIF (max 5MB)</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Input
               id="banner"
-              label="Or banner image URL"
+              label="Or paste poster image URL"
               placeholder="https://example.com/poster.jpg"
               error={errors.banner?.message}
               disabled={Boolean(bannerFile)}

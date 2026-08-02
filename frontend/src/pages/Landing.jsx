@@ -7,6 +7,13 @@ import Badge from '../components/ui/Badge';
 import BrandLogo from '../components/BrandLogo';
 import api from '../config/axios';
 import { getApiList } from '../utils/apiResponse';
+import { resolveAssetUrl } from '../utils/assetUrl';
+const landingHero = 'https://res.cloudinary.com/dcle8c2mz/image/upload/v1785705656/hackverse/page-backgrounds/landing-hero-hackathon.png';
+const landingTeam = 'https://res.cloudinary.com/dcle8c2mz/image/upload/v1785705658/hackverse/page-backgrounds/landing-team-hackathon.png';
+const landingWinners = 'https://res.cloudinary.com/dcle8c2mz/image/upload/v1785705660/hackverse/page-backgrounds/landing-winners-hackathon.png';
+const projectSubmissionImage = 'https://res.cloudinary.com/dcle8c2mz/image/upload/v1785705662/hackverse/page-backgrounds/landing-project-submission.png';
+const judgeEvaluationImage = 'https://res.cloudinary.com/dcle8c2mz/image/upload/v1785705663/hackverse/page-backgrounds/landing-judge-evaluation.png';
+const liveLeaderboardsImage = 'https://res.cloudinary.com/dcle8c2mz/image/upload/v1785705665/hackverse/page-backgrounds/landing-live-leaderboards.png';
 
 const FEATURED_STATUSES = ['registration_open', 'published', 'ongoing'];
 const FEATURED_LIMIT = 4;
@@ -94,6 +101,8 @@ const storySections = [
     title: 'Project Submission',
     lead: 'Ship demos when the window opens.',
     body: 'Teams submit GitHub repos, live demos, and short write-ups inside the submission window. Late chaos is reduced with clear deadlines and a simple form. Organizers always know what has been turned in and what is still pending.',
+    image: projectSubmissionImage,
+    imagePosition: 'center',
     points: [
       'Repo, demo, and write-up fields',
       'Open only during the submission window',
@@ -105,6 +114,8 @@ const storySections = [
     title: 'Judge Evaluation',
     lead: 'Scoring that feels fair and structured.',
     body: 'Assigned judges review submissions with weighted criteria for innovation, technology, and presentation. Scores stay tied to each project so reviews remain consistent across the panel. No more scattered spreadsheets after the demo day.',
+    image: judgeEvaluationImage,
+    imagePosition: 'center',
     points: [
       'Weighted judging criteria',
       'Assigned events per judge',
@@ -116,6 +127,8 @@ const storySections = [
     title: 'Live Leaderboards',
     lead: 'Watch rankings move as scores come in.',
     body: 'Leaderboards update as evaluations land, giving participants a transparent view of standing. Organizers can follow the race without exporting files. Public boards keep the energy high while results stay grounded in real scores.',
+    image: liveLeaderboardsImage,
+    imagePosition: 'center',
     points: [
       'Public leaderboard pages',
       'Ranks based on judge scores',
@@ -211,9 +224,14 @@ const Landing = () => {
   return (
     <div className="flex flex-col">
       <section className="relative min-h-screen flex items-center overflow-hidden pt-20">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 h-72 w-72 rounded-full bg-primary/25 blur-[100px]" />
-          <div className="absolute bottom-1/4 right-1/5 h-80 w-80 rounded-full bg-primary-soft/10 blur-[110px]" />
+        <div className="absolute inset-0">
+          <img
+            src={landingHero}
+            alt=""
+            className="h-full w-full object-cover object-[58%_center]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B] via-[#09090B]/72 to-[#09090B]/18" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-[#09090B]/45" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center pb-28">
@@ -221,7 +239,7 @@ const Landing = () => {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55 }}
-            className="flex flex-col gap-7"
+            className="flex flex-col gap-7 max-w-2xl"
           >
             <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-primary-soft">
               Build. Innovate. Win.
@@ -252,7 +270,7 @@ const Landing = () => {
             initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.12 }}
-            className="relative flex items-center justify-center min-h-[340px]"
+            className="relative hidden lg:flex items-center justify-center min-h-[340px]"
           >
             <div className="absolute inset-10 rounded-full bg-primary/20 blur-3xl" />
             <div className="relative float-slow pulse-glow rounded-[2rem] bg-[#121018]/70 p-8 backdrop-blur-sm">
@@ -292,8 +310,15 @@ const Landing = () => {
         </section>
 
         {/* Featured hackathons */}
-        <section className="relative py-16 sm:py-20 bg-gradient-to-b from-[#1a1028]/60 via-[#15101f]/40 to-transparent">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="relative overflow-hidden py-16 sm:py-20">
+          <img
+            src={landingHero}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B]/95 via-[#09090B]/72 to-[#09090B]/35" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-[#09090B]/65" />
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -339,7 +364,7 @@ const Landing = () => {
                       <div className="relative h-28 sm:h-24 sm:w-28 shrink-0 overflow-hidden rounded-xl bg-[#14101c]">
                         {h.banner ? (
                           <img
-                            src={h.banner}
+                            src={resolveAssetUrl(h.banner)}
                             alt=""
                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                           />
@@ -377,8 +402,15 @@ const Landing = () => {
         </section>
 
         {/* Upcoming events */}
-        <section className="py-16 sm:py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="relative overflow-hidden py-16 sm:py-20">
+          <img
+            src={landingTeam}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B]/96 via-[#09090B]/76 to-[#09090B]/42" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-[#09090B]/70" />
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -451,8 +483,15 @@ const Landing = () => {
         </section>
 
         {/* Previous winners */}
-        <section className="relative py-16 sm:py-20 bg-gradient-to-b from-[#1a1028]/60 via-[#15101f]/40 to-transparent">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="relative overflow-hidden py-16 sm:py-20">
+          <img
+            src={landingWinners}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B]/96 via-[#09090B]/72 to-[#09090B]/34" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-[#09090B]/65" />
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -524,12 +563,21 @@ const Landing = () => {
         </section>
 
         {/* Intro */}
-        <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 text-center">
+        <section className="relative overflow-hidden py-20 sm:py-28">
+          <img
+            src={landingTeam}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#09090B]/95 via-[#09090B]/72 to-[#09090B]/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-[#09090B]/70" />
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4 }}
+            className="max-w-3xl mx-auto text-center"
           >
             <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-muted mb-4">How it works</p>
             <h2 className="text-3xl sm:text-4xl font-display font-bold leading-tight">
@@ -539,22 +587,38 @@ const Landing = () => {
               Scroll through the full lifecycle. Each stage is built for organizers, participants, and judges who need clarity over complexity.
             </p>
           </motion.div>
+          </div>
         </section>
 
         {/* Vertical story sections */}
         {storySections.map((section, index) => {
           const reverse = index % 2 === 1;
           const isPurple = index % 2 === 0;
+          const hasImage = Boolean(section.image);
           return (
             <section
               key={section.step}
-              className={`relative py-20 sm:py-28 ${
-                isPurple
-                  ? 'bg-gradient-to-b from-[#1a1028] via-[#15101f] to-[#120e1a]'
-                  : 'bg-[#09090B]'
+              className={`relative overflow-hidden py-20 sm:py-28 ${
+                hasImage
+                  ? 'min-h-[620px] flex items-center'
+                  : isPurple
+                    ? 'bg-gradient-to-b from-[#1a1028] via-[#15101f] to-[#120e1a]'
+                    : 'bg-[#09090B]'
               }`}
             >
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              {hasImage && (
+                <>
+                  <img
+                    src={section.image}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover"
+                    style={{ objectPosition: section.imagePosition }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#09090B]/96 via-[#09090B]/68 to-[#09090B]/22" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-[#09090B]/70" />
+                </>
+              )}
+              <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                 <motion.div
                   initial={{ opacity: 0, y: 28 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -564,13 +628,13 @@ const Landing = () => {
                     reverse ? 'lg:[&>*:first-child]:order-2' : ''
                   }`}
                 >
-                  <div className="lg:col-span-5">
+                  <div className={`lg:col-span-5 ${hasImage ? 'rounded-2xl bg-[#09090B]/55 p-6 sm:p-8 backdrop-blur-sm ring-1 ring-white/[0.08]' : ''}`}>
                     <p className="font-mono text-sm text-primary-soft tracking-widest mb-3">{section.step}</p>
                     <h3 className="text-3xl sm:text-4xl font-display font-bold leading-tight">{section.title}</h3>
                     <p className="text-lg text-secondary/90 mt-4">{section.lead}</p>
                   </div>
 
-                  <div className="lg:col-span-7">
+                  <div className={`lg:col-span-7 ${hasImage ? 'rounded-2xl bg-[#09090B]/55 p-6 sm:p-8 backdrop-blur-sm ring-1 ring-white/[0.08]' : ''}`}>
                     <p className="text-muted text-base sm:text-lg leading-relaxed">{section.body}</p>
                     <ul className="mt-8 space-y-3">
                       {section.points.map((point) => (

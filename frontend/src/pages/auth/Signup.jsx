@@ -10,6 +10,7 @@ import Button from '../../components/ui/Button';
 import toast from 'react-hot-toast';
 import BrandLogo from '../../components/BrandLogo';
 import { ArrowLeft, Rocket, Users, Trophy } from 'lucide-react';
+const authBackground = 'https://res.cloudinary.com/dcle8c2mz/image/upload/v1785705666/hackverse/page-backgrounds/auth-hackverse-bg.png';
 
 const Signup = () => {
   const { signup } = useAuth();
@@ -50,16 +51,24 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+    <div className="relative min-h-screen overflow-hidden">
+      <img
+        src={authBackground}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover object-center"
+      />
+      <div className="absolute inset-0 bg-[#09090B]/55" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#09090B]/98 via-[#09090B]/78 to-[#09090B]/96" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-[#09090B]/35 to-[#09090B]/70" />
+
+      <div className="relative min-h-screen grid grid-cols-1 lg:grid-cols-2">
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.45 }}
-        className="relative hidden lg:flex flex-col justify-between p-10 xl:p-14 overflow-hidden border-r border-white/[0.06] bg-surfaceDark"
+        className="relative hidden lg:flex flex-col justify-between p-10 xl:p-14 overflow-hidden border-r border-white/[0.06]"
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-transparent to-transparent pointer-events-none" />
-        <div className="absolute -top-16 right-0 h-64 w-64 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-10 left-10 h-48 w-48 rounded-full bg-primary-soft/10 blur-3xl pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#09090B]/75 via-[#09090B]/35 to-transparent pointer-events-none" />
 
         <div className="relative z-10">
           <BrandLogo size="lg" />
@@ -101,17 +110,18 @@ const Signup = () => {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, delay: 0.1 }}
-        className="flex flex-col justify-center px-6 sm:px-10 xl:px-20 py-10"
+        className="relative flex flex-col justify-center px-6 sm:px-10 xl:px-20 py-10"
       >
-        <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-secondary mb-8 w-fit">
-          <ArrowLeft size={14} /> Back to home
-        </Link>
+        <div className="max-w-lg w-full mx-auto rounded-2xl bg-[#09090B]/88 p-6 sm:p-8 shadow-2xl shadow-black/50 ring-1 ring-white/[0.08] backdrop-blur-md">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-secondary mb-8 w-fit">
+            <ArrowLeft size={14} /> Back to home
+          </Link>
 
-        <div className="lg:hidden mb-8 flex justify-center">
-          <BrandLogo size="xl" showText={false} />
-        </div>
+          <div className="lg:hidden mb-8 flex justify-center">
+            <BrandLogo size="xl" showText={false} />
+          </div>
 
-        <div className="max-w-md w-full mx-auto flex flex-col gap-6">
+          <div className="flex flex-col gap-6">
           <div>
             <h1 className="text-3xl font-display font-bold">Join HackVerse</h1>
             <p className="text-sm text-muted mt-2">Create an account to start building.</p>
@@ -189,8 +199,10 @@ const Signup = () => {
               Log In
             </Link>
           </p>
+          </div>
         </div>
       </motion.div>
+      </div>
     </div>
   );
 };
