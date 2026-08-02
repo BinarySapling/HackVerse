@@ -21,5 +21,11 @@ Thumbs.db
 
 # Uploaded files
 backend/uploads/
+frontend/public/uploads/
+
+# Local seed/source images and scratch files
+seed-assets/
+frontend/src/assets/*.png
+tmp-*.json
 
 stitch-ref/

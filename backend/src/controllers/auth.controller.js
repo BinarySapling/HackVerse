@@ -108,11 +108,12 @@ export const changePassword = asyncHandler(async (req, res) => {
 
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
-  await authService.requestPasswordReset(email);
+  const result = await authService.requestPasswordReset(email);
   return ApiResponse.success(
     res,
     HttpStatus.OK,
-    'If that email is registered, a reset link has been sent.'
+    'If that email is registered, a reset link has been sent.',
+    result?.resetUrl ? { resetUrl: result.resetUrl, emailSent: false } : null
   );
 });
 

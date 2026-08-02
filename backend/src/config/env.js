@@ -48,6 +48,13 @@ const config = {
     fromEmail: process.env.MAIL_FROM_EMAIL,
     supportEmail: process.env.MAIL_FROM_EMAIL || 'support@hackverse.local',
   },
+  cloudinary: {
+    url: process.env.CLOUDINARY_URL || process.env.CLOUDINARY_API,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_NAME,
+    apiKey: process.env.CLOUDINARY_API_KEY || process.env.CLOUDINARY_API,
+    apiSecret: process.env.CLOUDINARY_API_SECRET || process.env.CLOUDINARY_SECRET,
+    folder: process.env.CLOUDINARY_FOLDER || 'hackverse',
+  },
   upstash: {
     restUrl: process.env.UPSTASH_REDIS_REST_URL,
     restToken: process.env.UPSTASH_REDIS_REST_TOKEN,

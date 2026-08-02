@@ -8,6 +8,7 @@ import Loader from '../../components/ui/Loader';
 import PageHeader, { SoftDivider, SoftDividerMuted } from '../../components/ui/PageHeader';
 import { useAuth } from '../../context/AuthContext';
 import { getApiData, getApiList } from '../../utils/apiResponse';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 import { Calendar, UserPlus, Users, Share2, ArrowRight, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -172,7 +173,7 @@ const ParticipantDashboard = () => {
                     <div className="relative w-full sm:w-[7.5rem] h-[4.75rem] shrink-0 overflow-hidden rounded-2xl bg-[#14101c] ring-1 ring-white/[0.06]">
                       {h.banner ? (
                         <img
-                          src={h.banner}
+                          src={resolveAssetUrl(h.banner)}
                           alt=""
                           className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
                         />

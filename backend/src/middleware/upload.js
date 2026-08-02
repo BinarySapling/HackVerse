@@ -56,6 +56,8 @@ const bannerStorage = multer.diskStorage({
   },
 });
 
+const bannerMemoryStorage = multer.memoryStorage();
+
 export const uploadAvatar = multer({
   storage: avatarStorage,
   fileFilter: imageFileFilter,
@@ -63,7 +65,7 @@ export const uploadAvatar = multer({
 }).single('avatar');
 
 export const uploadBanner = multer({
-  storage: bannerStorage,
+  storage: bannerMemoryStorage,
   fileFilter: imageFileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 }).single('banner');

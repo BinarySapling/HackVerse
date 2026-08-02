@@ -18,6 +18,9 @@ import {
   MapPin,
   Monitor,
   Sparkles,
+  Image as ImageIcon,
+  ExternalLink,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -45,6 +48,7 @@ const HackathonDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isTogglingRegistration, setIsTogglingRegistration] = useState(false);
+  const [isBannerOpen, setIsBannerOpen] = useState(false);
 
   const fetchHackathonAndReg = async () => {
     setIsLoading(true);
@@ -148,6 +152,7 @@ const HackathonDetail = () => {
   const registered = myRegistrations.some(
     (reg) => reg.hackathon?._id === hackathon._id && reg.status === 'registered'
   );
+  const bannerUrl = hackathon.banner ? resolveAssetUrl(hackathon.banner) : null;
 
   const isOwnerOrganizer =
     user?.role === 'organizer' &&
@@ -198,9 +203,9 @@ const HackathonDetail = () => {
     <div className="w-full">
       {/* Full-bleed poster */}
       <section className="relative w-full h-[42vh] min-h-[280px] max-h-[480px] sm:h-[48vh] bg-[#121018] overflow-hidden">
-        {hackathon.banner ? (
+        {bannerUrl ? (
           <img
-            src={resolveAssetUrl(hackathon.banner)}
+            src={bannerUrl}
             alt=""
             className="absolute inset-0 w-full h-full object-cover scale-105"
           />
@@ -220,6 +225,18 @@ const HackathonDetail = () => {
             </Link>
           </div>
 
+          {bannerUrl && (
+            <div className="absolute right-4 top-20 sm:right-6 sm:top-24 lg:right-8">
+              <button
+                type="button"
+                onClick={() => setIsBannerOpen(true)}
+                className="inline-flex items-center gap-2 rounded-full bg-[#09090B]/75 px-4 py-2 text-xs font-semibold text-white ring-1 ring-white/15 backdrop-blur-md transition-colors hover:bg-[#09090B]/90 hover:ring-primary/40"
+              >
+                <ImageIcon size={14} /> View banner
+              </button>
+            </div>
+          )}
+
           <div className="mt-auto pb-10 sm:pb-12 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <Badge variant={statusVariant}>{formatStatus(hackathon.status)}</Badge>
@@ -238,6 +255,48 @@ const HackathonDetail = () => {
           </div>
         </div>
       </section>
+
+      {isBannerOpen && bannerUrl && (
+        <div className="fixed inset-0 z-50 bg-[#050407]/95 backdrop-blur-md">
+          <div className="absolute inset-x-0 top-0 z-10 border-b border-white/10 bg-[#09090B]/85">
+            <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-[0.2em] text-primary-soft">Banner preview</p>
+                <p className="mt-0.5 truncate text-sm font-semibold text-white">{hackathon.title}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={bannerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-9 items-center gap-2 rounded-full bg-white/[0.06] px-3 text-xs font-semibold text-secondary ring-1 ring-white/10 transition-colors hover:bg-white/[0.1]"
+                >
+                  <ExternalLink size={14} /> Open
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setIsBannerOpen(false)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] text-secondary ring-1 ring-white/10 transition-colors hover:bg-white/[0.1]"
+                  aria-label="Close banner preview"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+          <div
+            className="flex h-full items-center justify-center overflow-auto px-4 pb-6 pt-24 sm:px-6"
+            onClick={() => setIsBannerOpen(false)}
+          >
+            <img
+              src={bannerUrl}
+              alt={`${hackathon.title} banner`}
+              onClick={(event) => event.stopPropagation()}
+              className="max-h-full max-w-full rounded-xl object-contain shadow-2xl shadow-black/60 ring-1 ring-white/10"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Content panel overlapping poster */}
       <section className="relative z-10 -mt-6 sm:-mt-8 rounded-t-[1.75rem] bg-[#0c0b10] border-t border-white/5">
