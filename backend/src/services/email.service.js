@@ -176,11 +176,94 @@ export const sendWinnerAnnouncement = async ({ participant, hackathon, rank, sco
   });
 };
 
+export const sendWelcomeEmail = async ({ user }) => {
+  const name = getDisplayName(user);
+  const loginUrl = `${config.frontendUrl}/login`;
+
+  return sendEmail({
+    type: 'welcome',
+    to: user?.email,
+    subject: 'Welcome to HackVerse',
+    html: baseTemplate({
+      greeting: `Welcome aboard, ${name}!`,
+      content: `
+        <p style="line-height: 1.6;">Thanks for joining <strong>HackVerse</strong> — the place to launch, join, and judge hackathons.</p>
+        <p style="line-height: 1.6;">We sent a separate email with a one-time verification code. Verify your email to unlock your account, then sign in and start building.</p>
+      `,
+      ctaText: 'Go to login',
+      ctaUrl: loginUrl,
+    }),
+    text: `Welcome to HackVerse, ${name}! Verify your email with the OTP we sent, then log in at ${loginUrl}.`,
+  });
+};
+
+export const sendSignupOtp = async ({ user, otp, expiresInMinutes = 3 }) => {
+  const name = getDisplayName(user);
+
+  const result = await sendEmail({
+    type: 'signup_otp',
+    to: user?.email,
+    subject: 'Your HackVerse verification code',
+    html: baseTemplate({
+      greeting: `Hi ${name},`,
+      content: `
+        <p style="line-height: 1.6;">Use this one-time code to verify your HackVerse account:</p>
+        <p style="font-size: 32px; letter-spacing: 8px; font-weight: 700; color: #0B4F6C; margin: 24px 0; text-align: center;">${otp}</p>
+        <p style="line-height: 1.6;">This code expires in <strong>${expiresInMinutes} minutes</strong>. If you did not create an account, you can ignore this email.</p>
+      `,
+    }),
+    text: `Your HackVerse verification code is ${otp}. It expires in ${expiresInMinutes} minutes.`,
+  });
+
+  if (result?.skipped || result?.failed) {
+    logger.error('Signup OTP email was not delivered', {
+      to: user?.email,
+      reason: result?.reason,
+    });
+    if (config.nodeEnv !== 'production') {
+      logger.warn(`DEV signup OTP for ${user?.email}: ${otp}`);
+    }
+    throw new Error(
+      result?.reason
+        ? `Could not send verification email: ${result.reason}`
+        : 'Could not send verification email. Check SMTP configuration.'
+    );
+  }
+
+  if (config.nodeEnv !== 'production') {
+    logger.info(`DEV signup OTP for ${user?.email}: ${otp}`);
+  }
+
+  return result;
+};
+
+export const sendPasswordResetEmail = async ({ user, resetUrl }) => {
+  const name = getDisplayName(user);
+  return sendEmail({
+    type: 'password_reset',
+    to: user?.email,
+    subject: 'Reset your HackVerse password',
+    html: baseTemplate({
+      greeting: `Hi ${name},`,
+      content: `
+        <p style="line-height: 1.6;">We received a request to reset your password.</p>
+        <p style="line-height: 1.6;">Click the button below. This link expires in 15 minutes.</p>
+      `,
+      ctaText: 'Reset password',
+      ctaUrl: resetUrl,
+    }),
+    text: `Reset your HackVerse password: ${resetUrl}`,
+  });
+};
+
 export default {
   sendEmail,
   sendJudgeInvitation,
   sendParticipantConfirmation,
   sendInvitationLink,
   sendSubmissionSuccess,
-  sendWinnerAnnouncement
+  sendWinnerAnnouncement,
+  sendWelcomeEmail,
+  sendSignupOtp,
+  sendPasswordResetEmail,
 };

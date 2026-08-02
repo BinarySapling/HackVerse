@@ -24,7 +24,7 @@ export const findBySlugOrId = async (slugOrId) => {
 
 export const findAll = async (filter, sort, skip, limit) => {
   return Hackathon.find(filter)
-    .select('title slug tagline description banner organizer registrationStart registrationEnd hackathonStart hackathonEnd submissionStart submissionDeadline minTeamSize maxTeamSize maxTeams prizePool status visibility contactEmail rules judges evaluationClosed winnersAnnounced createdAt')
+    .select('title slug tagline description banner organizer registrationStart registrationEnd hackathonStart hackathonEnd submissionStart submissionDeadline minTeamSize maxTeamSize maxTeams prizePool status visibility theme mode venue contactEmail rules judges evaluationClosed winnersAnnounced createdAt')
     .populate('organizer', 'firstName lastName email avatar')
     .sort(sort)
     .skip(skip)

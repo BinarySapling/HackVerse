@@ -61,18 +61,18 @@ const PublicLeaderboard = () => {
     <tr key={idx} className="hover:bg-hoverSurface transition-colors">
       <td className="px-5 py-4 font-bold text-secondary">
         <span className={`inline-flex items-center justify-center h-6 w-6 rounded-full text-xs ${
-          row.rank === 1 ? 'bg-teal-50 text-primary border border-teal-200' :
-          row.rank === 2 ? 'bg-slate-100 text-slate-700' :
-          row.rank === 3 ? 'bg-orange-50 text-warning border border-orange-200' : 'text-slate-500'
+          row.rank === 1 ? 'bg-primary/15 text-primary border border-primary/30' :
+          row.rank === 2 ? 'bg-hoverSurface text-secondary' :
+          row.rank === 3 ? 'bg-warning/15 text-warning border border-orange-200' : 'text-muted'
         }`}>
           {row.rank}
         </span>
       </td>
       <td className="px-5 py-4 font-semibold text-secondary">{row.teamName}</td>
-      <td className="px-5 py-4 text-slate-500">{row.leader}</td>
-      <td className="px-5 py-4 text-slate-600 font-medium">{row.innovation}/10</td>
-      <td className="px-5 py-4 text-slate-600 font-medium">{row.technical}/10</td>
-      <td className="px-5 py-4 text-slate-600 font-medium">{row.presentation}/10</td>
+      <td className="px-5 py-4 text-muted">{row.leader}</td>
+      <td className="px-5 py-4 text-muted font-medium">{row.innovation}/10</td>
+      <td className="px-5 py-4 text-muted font-medium">{row.technical}/10</td>
+      <td className="px-5 py-4 text-muted font-medium">{row.presentation}/10</td>
       <td className="px-5 py-4 font-bold text-primary">{row.averageScore}</td>
       <td className="px-5 py-4">
         <Badge variant="default">{row.judgeCount} judge(s)</Badge>
@@ -81,13 +81,18 @@ const PublicLeaderboard = () => {
   );
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+    <div className="relative flex flex-col gap-8 max-w-6xl">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-secondary tracking-tight">Hackathon Leaderboard</h1>
-          <p className="text-xs text-slate-400">Deterministic ranks based on evaluated average scores.</p>
+          <p className="text-[11px] tracking-[0.32em] uppercase text-primary-soft/80 mb-3 font-medium">
+            Rankings
+          </p>
+          <h1 className="text-3xl font-display font-semibold tracking-tight">Leaderboard</h1>
+          <p className="text-sm text-muted mt-2">
+            Deterministic ranks based on evaluated average scores.
+          </p>
         </div>
-        
+
         {user?.role === 'participant' && (
           <Button
             variant="outline"
@@ -95,10 +100,12 @@ const PublicLeaderboard = () => {
             isLoading={isMyResultLoading}
             className="gap-1.5 shrink-0"
           >
-            <Eye size={16} /> View My Team Result
+            <Eye size={16} /> View my team result
           </Button>
         )}
       </div>
+
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
 
       <Table
         headers={headers}
@@ -123,50 +130,50 @@ const PublicLeaderboard = () => {
       >
         {myResult && (
           <div className="flex flex-col gap-6">
-            <div className="flex justify-between items-center border-b border-border pb-3">
+            <div className="flex justify-between items-center border-b border-white/[0.06] pb-3">
               <div>
                 <h3 className="font-bold text-lg text-secondary">
                   {myResult.team?.name || 'My Team'}
                 </h3>
-                <span className="text-xs text-slate-400">Object ID: {myResult.team?.id || myResult.team}</span>
+                <span className="text-xs text-muted">Object ID: {myResult.team?.id || myResult.team}</span>
               </div>
               <div className="flex flex-col items-end">
-                <span className="text-xs text-slate-400 uppercase font-semibold">Rank</span>
+                <span className="text-xs text-muted uppercase font-semibold">Rank</span>
                 <span className="text-2xl font-extrabold text-primary">#{myResult.rank}</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-hoverSurface border border-border p-4 rounded-lg text-center">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white/[0.03] ring-1 ring-white/[0.06] p-4 rounded-2xl text-center">
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Avg Total</span>
+                <span className="text-[10px] font-bold text-muted uppercase">Avg Total</span>
                 <p className="text-lg font-bold text-primary">{myResult.averageScore}</p>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Avg Innovation</span>
+                <span className="text-[10px] font-bold text-muted uppercase">Avg Innovation</span>
                 <p className="text-base font-semibold text-secondary">{myResult.innovation}/10</p>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Avg Technical</span>
+                <span className="text-[10px] font-bold text-muted uppercase">Avg Technical</span>
                 <p className="text-base font-semibold text-secondary">{myResult.technical}/10</p>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Avg Presentation</span>
+                <span className="text-[10px] font-bold text-muted uppercase">Avg Presentation</span>
                 <p className="text-base font-semibold text-secondary">{myResult.presentation}/10</p>
               </div>
             </div>
 
             {/* Individual Evaluations */}
             <div className="flex flex-col gap-3">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Judge Scorecards</h4>
+              <h4 className="text-xs font-bold text-muted uppercase tracking-wider">Judge Scorecards</h4>
               <div className="flex flex-col gap-4">
                 {myResult.evaluations?.map((ev, idx) => (
-                  <div key={idx} className="border border-border p-4 rounded-lg flex flex-col gap-2 bg-white">
+                  <div key={idx} className="ring-1 ring-white/[0.06] p-4 rounded-2xl flex flex-col gap-2 bg-white/[0.02]">
                     <div className="flex justify-between items-start">
-                      <span className="text-xs font-semibold text-slate-500">Judge card {idx + 1}</span>
+                      <span className="text-xs font-semibold text-muted">Judge card {idx + 1}</span>
                       <Badge variant="success">Total: {ev.totalScore}/30</Badge>
                     </div>
-                    <p className="text-xs text-slate-500 italic">"{ev.remarks || 'No remarks provided.'}"</p>
-                    <div className="flex gap-4 text-[10px] font-bold text-slate-400 mt-1 uppercase">
+                    <p className="text-xs text-muted italic">"{ev.remarks || 'No remarks provided.'}"</p>
+                    <div className="flex gap-4 text-[10px] font-bold text-muted mt-1 uppercase">
                       <span>Innovation: {ev.innovationScore}/10</span>
                       <span>Technical: {ev.technicalScore}/10</span>
                       <span>Presentation: {ev.presentationScore}/10</span>

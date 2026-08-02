@@ -5,21 +5,21 @@ import Button from '../../components/ui/Button';
 
 const NotFound = () => {
   return (
-    <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-6 gap-6">
-      <div className="p-4 bg-slate-100 text-slate-400 rounded-full">
-        <HelpCircle size={48} />
+    <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-6 gap-6 page-glow">
+      <div className="p-4 bg-white/[0.04] ring-1 ring-white/[0.06] text-muted rounded-full">
+        <HelpCircle size={40} />
       </div>
       <div>
-        <h1 className="text-3xl font-extrabold text-secondary leading-tight">Page Not Found</h1>
-        <p className="text-sm text-slate-500 mt-2 max-w-md">
-          The page you are looking for does not exist or has been moved. Check the URL or navigate back.
+        <h1 className="text-3xl font-display font-semibold tracking-tight text-secondary">
+          Page not found
+        </h1>
+        <p className="text-sm text-muted mt-3 max-w-md leading-relaxed">
+          The page you are looking for does not exist or has been moved.
         </p>
       </div>
-      <div>
-        <Link to="/">
-          <Button variant="primary">Return Home</Button>
-        </Link>
-      </div>
+      <Link to="/">
+        <Button>Return home</Button>
+      </Link>
     </div>
   );
 };

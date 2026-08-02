@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import config from './config/env.js';
 import logger from './config/logger.js';
@@ -19,8 +21,13 @@ import leaderboardRoutes from './routes/leaderboard.routes.js';
 import invitationRoutes from './routes/invitation.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
+import userRoutes from './routes/user.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 import { notFound } from './middleware/notFoundMiddleware.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -34,11 +41,38 @@ if (config.trustProxy) {
 }
 
 app.use(requestIdMiddleware);
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
+
+// Allow configured frontends. Use "*" (or leave unset in Azure) to allow any origin.
+const allowAll =
+  !process.env.ALLOWED_ORIGINS ||
+  config.allowedOrigins.includes('*');
+
+const localDevOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001',
+];
 
 app.use(
   cors({
-    origin: config.allowedOrigins,
+    origin: (origin, callback) => {
+      // Non-browser tools (curl/postman) often send no Origin
+      if (!origin) return callback(null, true);
+      if (allowAll) return callback(null, true);
+      if (config.nodeEnv === 'development' && localDevOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      if (config.allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
     credentials: true,
@@ -65,9 +99,12 @@ app.use(
 app.use(cookieParser());
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/health', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
 app.use('/api/v1/hackathons', hackathonRoutes);
 app.use('/api/v1', registrationRoutes);
 app.use('/api/v1', teamRoutes);
@@ -77,6 +114,8 @@ app.use('/api/v1', leaderboardRoutes);
 app.use('/api/v1', invitationRoutes);
 app.use('/api/v1', notificationRoutes);
 app.use('/api/v1', dashboardRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

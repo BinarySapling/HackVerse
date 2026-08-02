@@ -170,6 +170,26 @@ const hackathonSchema = new mongoose.Schema(
       },
       default: 'public'
     },
+    theme: {
+      type: String,
+      trim: true,
+      maxlength: [100, "Theme cannot exceed 100 characters"],
+      default: null
+    },
+    mode: {
+      type: String,
+      enum: {
+        values: ['online', 'offline', 'hybrid'],
+        message: "Mode must be online, offline, or hybrid"
+      },
+      default: 'online'
+    },
+    venue: {
+      type: String,
+      trim: true,
+      maxlength: [200, "Venue cannot exceed 200 characters"],
+      default: null
+    },
     problemStatements: [problemStatementSchema],
     techStack: [
       {
@@ -221,7 +241,6 @@ const hackathonSchema = new mongoose.Schema(
  * 3. status: Index accelerates filtering operations on dashboards and landing pages showing only
  *    "ongoing" or "registration_open" hackathons.
  */
-hackathonSchema.index({ slug: 1 }, { unique: true });
 hackathonSchema.index({ organizer: 1 });
 hackathonSchema.index({ status: 1 });
 

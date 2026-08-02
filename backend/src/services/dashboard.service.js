@@ -1,4 +1,5 @@
 import Hackathon from '../models/Hackathon.js';
+import User from '../models/User.js';
 import Registration from '../models/Registration.js';
 import Team from '../models/Team.js';
 import Submission from '../models/Submission.js';
@@ -18,7 +19,7 @@ export const getDashboardStats = async (userId, userRole) => {
     const hackathons = await Hackathon.find(hackathonFilter).select('_id judges winnersAnnounced');
     const hackathonIds = hackathons.map((h) => h._id);
 
-    const [registeredTeams, submissions, pendingInvitations, winners] = await Promise.all([
+    const statsQueries = [
       Team.countDocuments({ hackathon: { $in: hackathonIds }, isDeleted: false }),
       Submission.countDocuments({ hackathon: { $in: hackathonIds }, isDeleted: false }),
       Invitation.countDocuments({
@@ -27,7 +28,15 @@ export const getDashboardStats = async (userId, userRole) => {
         expiresAt: { $gt: new Date() }
       }),
       Hackathon.countDocuments({ ...hackathonFilter, winnersAnnounced: true })
-    ]);
+    ];
+
+    if (userRole === Roles.ADMIN) {
+      statsQueries.push(User.countDocuments({ isDeleted: false }));
+    }
+
+    const results = await Promise.all(statsQueries);
+    const [registeredTeams, submissions, pendingInvitations, winners] = results;
+    const totalUsers = userRole === Roles.ADMIN ? results[4] : undefined;
 
     const judges = new Set();
     hackathons.forEach((h) => (h.judges || []).forEach((j) => judges.add(j.toString())));
@@ -39,7 +48,8 @@ export const getDashboardStats = async (userId, userRole) => {
       judges: judges.size,
       pendingInvitations,
       submissions,
-      winners
+      winners,
+      ...(totalUsers !== undefined && { totalUsers }),
     };
   }
 
@@ -86,7 +96,15 @@ export const getDashboardStats = async (userId, userRole) => {
     const submissions = await Submission.find({
       team: { $in: teamIds },
       isDeleted: false
-    }).select('team submittedAt');
+    }).select('team status hackathon');
+
+    const teamHackathonMap = new Map(
+      teams.map((t) => [t._id.toString(), t.hackathon?._id || t.hackathon])
+    );
+    const submissionReviews = submissions.map((s) => ({
+      hackathonId: teamHackathonMap.get(s.team.toString()),
+      status: s.status || 'pending'
+    })).filter((item) => item.hackathonId);
 
     const upcomingDeadlines = registrations
       .map((r) => r.hackathon)
@@ -108,7 +126,8 @@ export const getDashboardStats = async (userId, userRole) => {
       submissionStatus: {
         submitted: submissions.length,
         pending: Math.max(teams.length - submissions.length, 0)
-      }
+      },
+      submissionReviews
     };
   }
 

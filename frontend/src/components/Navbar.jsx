@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from './ui/Button';
-import { Sparkles, LogOut, LayoutDashboard, Menu, X } from 'lucide-react';
+import BrandLogo from './BrandLogo';
+import { LogOut, LayoutDashboard, Menu, X } from 'lucide-react';
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleDashboardRedirect = () => {
     setIsMenuOpen(false);
@@ -21,25 +30,28 @@ const Navbar = () => {
   };
 
   const navLinkClass = ({ isActive }) =>
-    `rounded-md px-3 py-2 transition-colors ${
-      isActive
-        ? 'bg-hoverSurface text-primary'
-        : 'text-slate-600 hover:bg-hoverSurface hover:text-primary'
+    `px-3 py-2 text-sm font-medium transition-colors ${
+      isActive ? 'text-white' : 'text-muted hover:text-secondary'
     }`;
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 text-primary font-bold text-lg select-none">
-          <div className="bg-primary text-white p-1.5 rounded-lg">
-            <Sparkles size={18} />
-          </div>
-          <span>HackVerse</span>
-        </Link>
+    <header
+      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-[#0c0b10]/90 backdrop-blur-xl shadow-[0_8px_30px_rgba(0,0,0,0.35)]'
+          : 'bg-transparent'
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between py-3">
+        <BrandLogo size="md" />
 
-        <nav className="hidden md:flex items-center gap-2 text-sm font-medium">
-          <NavLink to="/" className={navLinkClass}>Home</NavLink>
-          <NavLink to="/hackathons" className={navLinkClass}>Hackathons</NavLink>
+        <nav className="hidden md:flex items-center gap-1 rounded-full bg-white/5 px-2 py-1">
+          <NavLink to="/" end className={navLinkClass}>
+            Home
+          </NavLink>
+          <NavLink to="/hackathons" className={navLinkClass}>
+            Hackathons
+          </NavLink>
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
@@ -56,11 +68,13 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              <Link to="/login">
-                <Button variant="secondary" size="sm">Login</Button>
+              <Link to="/login" className="text-sm text-muted hover:text-secondary transition-colors px-2">
+                Login
               </Link>
               <Link to="/signup">
-                <Button variant="primary" size="sm">Register</Button>
+                <Button variant="primary" size="sm">
+                  Get Started
+                </Button>
               </Link>
             </>
           )}
@@ -68,7 +82,7 @@ const Navbar = () => {
 
         <button
           type="button"
-          className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-secondary hover:bg-hoverSurface"
+          className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-secondary hover:bg-white/10"
           onClick={() => setIsMenuOpen((open) => !open)}
           aria-label="Toggle navigation menu"
           aria-expanded={isMenuOpen}
@@ -78,11 +92,15 @@ const Navbar = () => {
       </div>
 
       {isMenuOpen && (
-        <div className="md:hidden border-t border-border bg-white">
-          <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-2 text-sm font-medium">
-            <NavLink to="/" className={navLinkClass} onClick={() => setIsMenuOpen(false)}>Home</NavLink>
-            <NavLink to="/hackathons" className={navLinkClass} onClick={() => setIsMenuOpen(false)}>Hackathons</NavLink>
-            <div className="pt-2 flex flex-col gap-2">
+        <div className="md:hidden border-t border-white/5 bg-[#0c0b10]/95 backdrop-blur-xl">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-2 text-sm font-medium">
+            <NavLink to="/" end className={navLinkClass} onClick={() => setIsMenuOpen(false)}>
+              Home
+            </NavLink>
+            <NavLink to="/hackathons" className={navLinkClass} onClick={() => setIsMenuOpen(false)}>
+              Hackathons
+            </NavLink>
+            <div className="pt-3 flex flex-col gap-2">
               {isAuthenticated ? (
                 <>
                   <Button variant="secondary" size="sm" onClick={handleDashboardRedirect} className="w-full gap-1.5">
@@ -97,10 +115,14 @@ const Navbar = () => {
               ) : (
                 <>
                   <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="secondary" size="sm" className="w-full">Login</Button>
+                    <Button variant="outline" size="sm" className="w-full">
+                      Login
+                    </Button>
                   </Link>
                   <Link to="/signup" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="primary" size="sm" className="w-full">Register</Button>
+                    <Button variant="primary" size="sm" className="w-full">
+                      Get Started
+                    </Button>
                   </Link>
                 </>
               )}

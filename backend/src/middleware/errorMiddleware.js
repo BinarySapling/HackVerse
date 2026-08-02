@@ -61,6 +61,10 @@ export const errorHandler = (err, req, res, next) => {
     errorCode: errorCode
   };
 
+  if (err.data) {
+    extraFields.data = err.data;
+  }
+
   if (config.nodeEnv !== 'production') {
     extraFields.stack = err.stack;
   }
@@ -69,7 +73,7 @@ export const errorHandler = (err, req, res, next) => {
     res,
     statusCode,
     message,
-    null,
+    err.data || null,
     null,
     extraFields,
     req.requestId
