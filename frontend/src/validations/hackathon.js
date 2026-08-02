@@ -13,6 +13,12 @@ export const hackathonSchema = z.object({
   description: z
     .string()
     .min(1, 'Description is required'),
+  banner: z
+    .string()
+    .url('Please enter a valid image URL')
+    .or(z.literal(''))
+    .optional()
+    .nullable(),
   registrationStart: z
     .string()
     .min(1, 'Registration start date is required'),
@@ -25,6 +31,8 @@ export const hackathonSchema = z.object({
   hackathonEnd: z
     .string()
     .min(1, 'Hackathon end date is required'),
+  submissionStart: z.string().optional().nullable(),
+  submissionDeadline: z.string().optional().nullable(),
   minTeamSize: z
     .number({ invalid_type_error: 'Min team size must be a number' })
     .int()
@@ -33,6 +41,14 @@ export const hackathonSchema = z.object({
     .number({ invalid_type_error: 'Max team size must be a number' })
     .int()
     .min(1, 'Maximum team size must be at least 1'),
+  maxTeams: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined || Number.isNaN(val) ? undefined : val),
+    z.number({ invalid_type_error: 'Max teams must be a number' }).int().min(1).optional()
+  ),
+  prizePool: z.string().optional().nullable(),
+  theme: z.string().max(100).optional().nullable(),
+  mode: z.enum(['online', 'offline', 'hybrid']).optional(),
+  venue: z.string().max(200).optional().nullable(),
   contactEmail: z
     .string()
     .min(1, 'Contact email is required')

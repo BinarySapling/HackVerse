@@ -7,11 +7,98 @@
     scroll-behavior: smooth;
   }
 
+  :root {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-background text-secondary font-sans;
+    @apply bg-background text-secondary font-sans antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
   }
 
   * {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  ::selection {
+    @apply bg-primary/40 text-white;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-[#121018]/70 backdrop-blur-md rounded-2xl ring-1 ring-white/[0.06];
+  }
+
+  .soft-section-label {
+    @apply text-[11px] tracking-[0.28em] uppercase text-muted/70 font-medium;
+  }
+
+  .soft-row-divider {
+    @apply h-px bg-gradient-to-r from-white/[0.07] via-white/[0.05] to-transparent;
+  }
+
+  .gradient-text {
+    background-image: linear-gradient(90deg, #d2bbff, #7c3aed, #d2bbff);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shine 5s linear infinite;
+  }
+
+  .page-glow {
+    background:
+      radial-gradient(ellipse 90% 55% at 15% -5%, rgba(124, 58, 237, 0.32), transparent 55%),
+      radial-gradient(ellipse 70% 45% at 90% 5%, rgba(210, 187, 255, 0.12), transparent 50%),
+      radial-gradient(ellipse 55% 40% at 50% 100%, rgba(124, 58, 237, 0.14), transparent 55%);
+  }
+
+  .soft-card {
+    @apply bg-[#121018]/70 rounded-2xl ring-1 ring-white/[0.06] transition-all duration-300;
+  }
+
+  .soft-card:hover {
+    @apply -translate-y-0.5 bg-[#17141f]/90 ring-primary/20;
+  }
+
+  .float-slow {
+    animation: float 7s ease-in-out infinite;
+  }
+
+  .pulse-glow {
+    animation: pulseGlow 3.5s ease-in-out infinite;
+  }
+
+  .section-overlap {
+    @apply relative z-10 -mt-16 sm:-mt-24 rounded-t-[2rem] bg-[#0c0b10];
+    box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.45);
+  }
+}
+
+@keyframes shine {
+  to {
+    background-position: 200% center;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 36px rgba(124, 58, 237, 0.45);
   }
 }

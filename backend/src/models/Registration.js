@@ -18,8 +18,8 @@ const registrationSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['registered', 'cancelled'],
-      default: 'registered'
+      enum: ['pending', 'registered', 'rejected', 'cancelled'],
+      default: 'pending'
     },
     isDeleted: {
       type: Boolean,

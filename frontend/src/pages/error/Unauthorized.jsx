@@ -5,22 +5,24 @@ import Button from '../../components/ui/Button';
 
 const Unauthorized = () => {
   return (
-    <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-6 gap-6">
-      <div className="p-4 bg-red-50 text-danger rounded-full">
-        <ShieldAlert size={48} />
+    <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-6 gap-6 page-glow">
+      <div className="p-4 bg-danger/12 ring-1 ring-danger/20 text-danger rounded-full">
+        <ShieldAlert size={40} />
       </div>
       <div>
-        <h1 className="text-3xl font-extrabold text-secondary leading-tight">Access Denied</h1>
-        <p className="text-sm text-slate-500 mt-2 max-w-md">
-          You do not have the required permissions or authentication scopes to view this page. If you believe this is an error, please contact your administrator.
+        <h1 className="text-3xl font-display font-semibold tracking-tight text-secondary">
+          Access denied
+        </h1>
+        <p className="text-sm text-muted mt-3 max-w-md leading-relaxed">
+          You do not have permission to view this page.
         </p>
       </div>
       <div className="flex gap-3">
         <Link to="/">
-          <Button variant="secondary">Go to Home</Button>
+          <Button variant="secondary">Go home</Button>
         </Link>
         <Link to="/login">
-          <Button variant="primary">Login Account</Button>
+          <Button>Log in</Button>
         </Link>
       </div>
     </div>

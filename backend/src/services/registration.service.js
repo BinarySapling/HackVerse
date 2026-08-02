@@ -57,6 +57,14 @@ export const registerForHackathon = async (userId, userRole, hackathonId) => {
     );
   }
 
+  if (hackathon.status !== 'registration_open') {
+    throw new AppError(
+      'Registration is not open for this hackathon',
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
   if (hackathon.maxTeams) {
     const Team = (await import('../models/Team.js')).default;
     const teamCount = await Team.countDocuments({ hackathon: hackathonId, isDeleted: false });
@@ -72,63 +80,34 @@ export const registerForHackathon = async (userId, userRole, hackathonId) => {
   // 4. Handle duplicates and potential re-registrations
   const existingRegistration = await registrationRepository.findByUserAndHackathon(userId, hackathonId);
   if (existingRegistration) {
-    if (existingRegistration.status === 'registered') {
+    if (existingRegistration.status === 'registered' || existingRegistration.status === 'pending') {
       throw new AppError(
-        "You are already registered for this hackathon",
+        existingRegistration.status === 'pending'
+          ? 'Your registration is pending organizer approval'
+          : 'You are already registered for this hackathon',
         HttpStatus.CONFLICT,
         ErrorCodes.CONFLICT
       );
     }
 
-    // Reactivate previously cancelled registration document
-    if (existingRegistration.status === 'cancelled') {
-      existingRegistration.status = 'registered';
+    // Reactivate cancelled or rejected registration as pending
+    if (existingRegistration.status === 'cancelled' || existingRegistration.status === 'rejected') {
+      existingRegistration.status = 'pending';
       existingRegistration.registrationDate = new Date();
       await existingRegistration.save();
-      logger.info(`Re-activated registration [ID: ${existingRegistration._id}] for user: ${userId}`);
-
-      try {
-        const participant = await authRepository.findUserById(userId);
-        void emailService.sendParticipantConfirmation({
-          participant,
-          hackathon
-        });
-      } catch (error) {
-        logger.error('Participant confirmation email failed after successful registration reactivation', {
-          type: 'participant_registration_confirmation',
-          recipient: userId,
-          timestamp: new Date().toISOString(),
-          reason: error.message
-        });
-      }
-
+      logger.info(`Re-submitted registration [ID: ${existingRegistration._id}] for user: ${userId}`);
       return { registration: existingRegistration, isReactivated: true };
     }
   }
 
-  // 5. Create new registration record
+  // 5. Create new registration (needs organizer approval)
   const registration = await registrationRepository.create({
     user: userId,
     hackathon: hackathonId,
-    status: 'registered'
+    status: 'pending'
   });
 
-  logger.info(`User "${userId}" registered for hackathon "${hackathonId}" successfully. Registration ID: "${registration._id}"`);
-
-  try {
-    const participant = await authRepository.findUserById(userId);
-    void emailService.sendParticipantConfirmation({
-      participant,
-      hackathon
-    });
-  } catch (error) {
-    logger.error('Participant confirmation email failed after successful registration', {
-      type: 'participant_registration_confirmation',
-      recipient: userId,
-      timestamp: new Date().toISOString(),
-      reason: error.message
-    });
-  }
+  logger.info(`User "${userId}" registered for hackathon "${hackathonId}" (pending). Registration ID: "${registration._id}"`);
 
   return { registration, isReactivated: false };
 };
@@ -150,6 +129,72 @@ export const getMyRegistrations = async (userId, query) => {
       pages: Math.ceil(total / limit)
     }
   };
+};
+
+export const getHackathonRegistrations = async (hackathonId, userId, userRole) => {
+  const hackathon = await hackathonRepository.findById(hackathonId);
+  if (!hackathon || hackathon.isDeleted) {
+    throw new AppError('Hackathon not found', HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND);
+  }
+
+  const organizerId = (hackathon.organizer._id || hackathon.organizer).toString();
+  if (userRole !== Roles.ADMIN && organizerId !== userId.toString()) {
+    throw new AppError(
+      'Only the organizer can view registrations',
+      HttpStatus.FORBIDDEN,
+      ErrorCodes.FORBIDDEN
+    );
+  }
+
+  const registrations = await registrationRepository.findByHackathon(hackathonId);
+  return registrations;
+};
+
+export const reviewRegistration = async (registrationId, userId, userRole, decision) => {
+  if (!['approve', 'reject'].includes(decision)) {
+    throw new AppError('Decision must be approve or reject', HttpStatus.BAD_REQUEST, ErrorCodes.VALIDATION_ERROR);
+  }
+
+  const registration = await registrationRepository.findById(registrationId);
+  if (!registration || registration.isDeleted) {
+    throw new AppError('Registration not found', HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND);
+  }
+
+  const hackathon = registration.hackathon;
+  const organizerId = (hackathon.organizer._id || hackathon.organizer).toString();
+  if (userRole !== Roles.ADMIN && organizerId !== userId.toString()) {
+    throw new AppError(
+      'Only the organizer can review registrations',
+      HttpStatus.FORBIDDEN,
+      ErrorCodes.FORBIDDEN
+    );
+  }
+
+  if (registration.status !== 'pending') {
+    throw new AppError(
+      'Only pending registrations can be reviewed',
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
+  const nextStatus = decision === 'approve' ? 'registered' : 'rejected';
+  const updated = await registrationRepository.updateStatus(registrationId, nextStatus);
+
+  if (decision === 'approve') {
+    try {
+      const participant = await authRepository.findUserById(registration.user._id || registration.user);
+      void emailService.sendParticipantConfirmation({
+        participant,
+        hackathon,
+      });
+    } catch (error) {
+      logger.error(`Approval email failed: ${error.message}`);
+    }
+  }
+
+  logger.info(`Registration ${registrationId} ${decision}d by ${userId}`);
+  return updated;
 };
 
 export const cancelRegistration = async (registrationId, userId) => {
@@ -184,5 +229,7 @@ export const cancelRegistration = async (registrationId, userId) => {
 export default {
   registerForHackathon,
   getMyRegistrations,
+  getHackathonRegistrations,
+  reviewRegistration,
   cancelRegistration
 };

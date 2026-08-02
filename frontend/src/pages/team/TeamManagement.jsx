@@ -10,9 +10,9 @@ import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Loader from '../../components/ui/Loader';
 import Badge from '../../components/ui/Badge';
-import { getApiData, getApiList } from '../../utils/apiResponse';
+import { getApiData } from '../../utils/apiResponse';
 import toast from 'react-hot-toast';
-import { Users, Plus, UserMinus, ShieldAlert, ArrowLeft, Trash2, LogOut } from 'lucide-react';
+import { Users, Plus, UserMinus, ShieldAlert, ArrowLeft, Trash2, LogOut, Pencil, Check, X } from 'lucide-react';
 
 const TeamManagement = () => {
   const { hackathonId } = useParams();
@@ -21,6 +21,9 @@ const TeamManagement = () => {
   const [hackathon, setHackathon] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [teamName, setTeamName] = useState('');
+  const [isSavingName, setIsSavingName] = useState(false);
 
   const {
     register: registerTeam,
@@ -43,11 +46,8 @@ const TeamManagement = () => {
   const fetchTeamAndEvent = async () => {
     setIsLoading(true);
     try {
-      // Get Hackathon Info
-      const hRes = await api.get('/hackathons');
-      const list = getApiList(hRes);
-      const h = list.find((item) => item._id === hackathonId);
-      setHackathon(h);
+      const hRes = await api.get(`/hackathons/${hackathonId}`);
+      setHackathon(getApiData(hRes));
 
       // Get My Team
       const response = await api.get(`/hackathons/${hackathonId}/my-team`);
@@ -64,6 +64,10 @@ const TeamManagement = () => {
     fetchTeamAndEvent();
   }, [hackathonId]);
 
+  useEffect(() => {
+    if (team?.name) setTeamName(team.name);
+  }, [team?.name]);
+
   const onCreateTeam = async (data) => {
     setIsSubmitting(true);
     try {
@@ -78,15 +82,14 @@ const TeamManagement = () => {
     }
   };
 
-  const onAddMember = async (data) => {
+  const onInviteMember = async (data) => {
     setIsSubmitting(true);
     try {
-      await api.patch(`/teams/${team._id}/members`, { memberId: data.memberId });
-      toast.success('Member added successfully!');
+      await api.post(`/teams/${team._id}/invitations`, { email: data.email });
+      toast.success('Invitation email sent!');
       resetInvite();
-      fetchTeamAndEvent();
     } catch (err) {
-      toast.error(err.message || 'Failed to add member.');
+      toast.error(err.message || 'Failed to send invitation.');
     } finally {
       setIsSubmitting(false);
     }
@@ -125,23 +128,72 @@ const TeamManagement = () => {
     }
   };
 
+  const handleSaveTeamName = async () => {
+    const trimmed = teamName.trim();
+    if (!trimmed || trimmed === team.name) {
+      setTeamName(team.name);
+      setIsEditingName(false);
+      return;
+    }
+    if (trimmed.length < 3) {
+      toast.error('Team name must be at least 3 characters.');
+      return;
+    }
+
+    setIsSavingName(true);
+    try {
+      await api.patch(`/teams/${team._id}`, { name: trimmed });
+      toast.success('Team name updated.');
+      setIsEditingName(false);
+      fetchTeamAndEvent();
+    } catch (err) {
+      toast.error(err.message || 'Failed to update team name.');
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
+  const cancelNameEdit = () => {
+    setTeamName(team?.name || '');
+    setIsEditingName(false);
+  };
+
   if (isLoading) return <Loader size="lg" />;
 
-  const isLeader = team && team.leader?._id === user?.id;
+  const userId = String(user?.id || user?._id || '');
+  const leaderId = String(team?.leader?._id || team?.leader || '');
+  const isLeader = Boolean(team && userId && leaderId === userId);
+  const submissionStart = hackathon
+    ? new Date(hackathon.submissionStart || hackathon.hackathonStart)
+    : null;
+  const submissionEnd = hackathon
+    ? new Date(hackathon.submissionDeadline || hackathon.hackathonEnd)
+    : null;
+  const now = new Date();
+  const submissionOpen =
+    submissionStart && submissionEnd && now >= submissionStart && now <= submissionEnd;
   const memberList = team?.members?.filter((member) => member._id !== team.leader?._id) || [];
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl mx-auto">
-      <Link to="/dashboard/participant" className="text-slate-400 hover:text-slate-600 flex items-center gap-1.5 text-xs font-semibold select-none">
-        <ArrowLeft size={14} /> Back to Dashboard
+    <div className="relative flex flex-col gap-8 max-w-4xl">
+      <Link
+        to="/dashboard/participant"
+        className="text-muted hover:text-primary-soft flex items-center gap-1.5 text-xs transition-colors w-fit"
+      >
+        <ArrowLeft size={14} /> Back to dashboard
       </Link>
 
       <div>
-        <h2 className="text-xl font-bold text-secondary">
-          {hackathon?.title || 'Hackathon'} — Team Console
-        </h2>
-        <p className="text-xs text-slate-400">Establish and manage your collaborative development crew.</p>
+        <p className="text-[11px] tracking-[0.32em] uppercase text-primary-soft/80 mb-3 font-medium">
+          Team console
+        </p>
+        <h1 className="text-3xl font-display font-semibold tracking-tight">
+          {hackathon?.title || 'Hackathon'}
+        </h1>
+        <p className="text-sm text-muted mt-2">Establish and manage your collaborative crew.</p>
       </div>
+
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
 
       {!team ? (
         /* Create Team Form */
@@ -149,7 +201,7 @@ const TeamManagement = () => {
           <div className="text-center">
             <Users size={36} className="text-primary mx-auto mb-3" />
             <h3 className="text-base font-bold text-secondary">Form a Team</h3>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-muted mt-1">
               Create a team to join collaboration challenges. You will act as the team leader.
             </p>
           </div>
@@ -171,10 +223,47 @@ const TeamManagement = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Members list */}
           <Card className="md:col-span-2 flex flex-col gap-6">
-            <div className="flex justify-between items-center border-b border-border pb-4">
-              <div>
-                <h3 className="font-extrabold text-lg text-secondary">{team.name}</h3>
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+            <div className="flex justify-between items-center border-b border-white/[0.06] pb-4">
+              <div className="min-w-0 flex-1">
+                {isLeader && isEditingName ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={teamName}
+                      onChange={(e) => setTeamName(e.target.value)}
+                      maxLength={50}
+                      className="flex-1 min-w-0 h-9 px-3 rounded-lg bg-white/[0.03] text-sm text-secondary ring-1 ring-white/[0.08] focus:outline-none focus:ring-primary/50"
+                      autoFocus
+                    />
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="gap-1 shrink-0"
+                      onClick={handleSaveTeamName}
+                      isLoading={isSavingName}
+                    >
+                      <Check size={14} />
+                    </Button>
+                    <Button variant="outline" size="sm" className="shrink-0" onClick={cancelNameEdit}>
+                      <X size={14} />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-lg text-secondary truncate">{team.name}</h3>
+                    {isLeader && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingName(true)}
+                        className="text-muted hover:text-primary-soft transition-colors"
+                        aria-label="Edit team name"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                    )}
+                  </div>
+                )}
+                <span className="text-[10px] text-muted font-bold uppercase tracking-wider">
                   Capacity: {team.members?.length || 0} / {team.maxMembers || 4} Members
                 </span>
               </div>
@@ -193,19 +282,19 @@ const TeamManagement = () => {
 
             {/* List members */}
             <div className="flex flex-col gap-4">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Members</h4>
-              <div className="divide-y divide-border">
+              <h4 className="text-xs font-bold text-muted uppercase tracking-wider">Members</h4>
+              <div className="divide-y divide-white/[0.06]">
                 {/* Leader */}
                 <div className="py-3 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 bg-teal-50 text-primary font-bold rounded-full flex items-center justify-center text-xs">
+                    <div className="h-8 w-8 bg-primary/15 text-primary font-bold rounded-full flex items-center justify-center text-xs">
                       {team.leader?.firstName ? team.leader.firstName[0].toUpperCase() : 'L'}
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-secondary">
                         {team.leader?.firstName} {team.leader?.lastName}
                       </p>
-                      <p className="text-xs text-slate-400">{team.leader?.email}</p>
+                      <p className="text-xs text-muted">{team.leader?.email}</p>
                     </div>
                   </div>
                   <Badge variant="warning">Leader</Badge>
@@ -215,25 +304,45 @@ const TeamManagement = () => {
                 {memberList.map((member) => (
                   <div key={member._id} className="py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 bg-slate-100 text-slate-600 font-bold rounded-full flex items-center justify-center text-xs">
+                      <div className="h-8 w-8 bg-hoverSurface text-muted font-bold rounded-full flex items-center justify-center text-xs">
                         {member.firstName ? member.firstName[0].toUpperCase() : 'M'}
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-secondary">
                           {member.firstName} {member.lastName}
                         </p>
-                        <p className="text-xs text-slate-400">{member.email}</p>
+                        <p className="text-xs text-muted">{member.email}</p>
                       </div>
                     </div>
                     {isLeader && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-500 hover:bg-red-50 border-red-200 gap-1"
-                        onClick={() => handleRemoveMember(member._id)}
-                      >
-                        <UserMinus size={12} /> Kick
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1"
+                          onClick={async () => {
+                            try {
+                              await api.patch(`/teams/${team._id}/transfer-leadership`, {
+                                newLeaderId: member._id,
+                              });
+                              toast.success('Leadership transferred');
+                              fetchTeamAndEvent();
+                            } catch (err) {
+                              toast.error(err.message || 'Transfer failed');
+                            }
+                          }}
+                        >
+                          Make leader
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-500 hover:bg-danger/15 border-red-200 gap-1"
+                          onClick={() => handleRemoveMember(member._id)}
+                        >
+                          <UserMinus size={12} /> Kick
+                        </Button>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -246,33 +355,47 @@ const TeamManagement = () => {
             {/* Invite form */}
             {isLeader && (team.members?.length || 0) < (team.maxMembers || 4) && (
               <Card className="flex flex-col gap-4">
-                <h4 className="text-sm font-bold text-secondary">Add Team Member</h4>
-                <form onSubmit={handleInviteSubmit(onAddMember)} className="flex flex-col gap-3">
+                <h4 className="text-sm font-bold text-secondary">Invite Team Member</h4>
+                <form onSubmit={handleInviteSubmit(onInviteMember)} className="flex flex-col gap-3">
                   <Input
-                    id="memberId"
-                    placeholder="Participant user ID"
-                    error={inviteErrors.memberId?.message}
-                    {...registerInvite('memberId')}
+                    id="email"
+                    type="email"
+                    placeholder="participant@email.com"
+                    error={inviteErrors.email?.message}
+                    {...registerInvite('email')}
                   />
                   <Button type="submit" variant="primary" className="w-full gap-1.5" isLoading={isSubmitting}>
-                    <Plus size={16} /> Add Member
+                    <Plus size={16} /> Send Invite
                   </Button>
                 </form>
               </Card>
             )}
 
-            {/* Submission shortcut */}
-            <Card className="flex flex-col gap-4 text-center">
-              <h4 className="text-sm font-bold text-secondary">Project Submission</h4>
-              <p className="text-xs text-slate-500">
-                Ready to submit? Leader must register and provide repository details.
-              </p>
-              <Link to={`/hackathons/${hackathonId}/submit`}>
-                <Button variant="primary" className="w-full">
-                  Go to Submissions
-                </Button>
-              </Link>
-            </Card>
+            {/* Submission shortcut — only while window is open */}
+            {submissionOpen ? (
+              <Card className="flex flex-col gap-4 text-center">
+                <h4 className="text-sm font-bold text-secondary">Project Submission</h4>
+                <p className="text-xs text-muted">
+                  Ready to submit? Leader must register and provide repository details.
+                </p>
+                <Link to={`/hackathons/${hackathonId}/submit`}>
+                  <Button variant="primary" className="w-full">
+                    Go to Submissions
+                  </Button>
+                </Link>
+              </Card>
+            ) : (
+              <Card className="flex flex-col gap-2 text-center">
+                <h4 className="text-sm font-bold text-secondary">Project Submission</h4>
+                <p className="text-xs text-muted">
+                  {submissionStart && now < submissionStart
+                    ? `Opens ${submissionStart.toLocaleString()}`
+                    : submissionEnd && now > submissionEnd
+                      ? 'Submission window is closed.'
+                      : 'Submission window unavailable.'}
+                </p>
+              </Card>
+            )}
           </div>
         </div>
       )}

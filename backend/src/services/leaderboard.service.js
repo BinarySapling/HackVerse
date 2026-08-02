@@ -32,7 +32,7 @@ export const getLeaderboard = async (userId, hackathonId, query) => {
 
   const result = await leaderboardRepository.getLeaderboard(hackathonId, skip, limit);
 
-  logger.info(`Leaderboard Viewed [Hackathon: ${hackathonId}] [User: ${userId}]`);
+  logger.info(`Leaderboard Viewed [Hackathon: ${hackathonId}] [User: ${userId || 'public'}]`);
 
   return {
     leaderboard: result.results,

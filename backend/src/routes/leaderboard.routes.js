@@ -13,11 +13,9 @@ import { validateHackathonIdParam } from '../validators/evaluation.validator.js'
 
 const router = express.Router();
 
-// Retrieve the public leaderboard for a hackathon
+// Public leaderboard (no login required)
 router.get(
   '/hackathons/:hackathonId/leaderboard',
-  authenticate,
-  authorize(RolePolicies.ANY_AUTHENTICATED),
   validateHackathonIdParam,
   getLeaderboard
 );

@@ -16,14 +16,21 @@ if (missingEnvVars.length > 0) {
   process.exit(1);
 }
 
+const nodeEnv = process.env.NODE_ENV || 'development';
+
 const config = {
   port: parseInt(process.env.PORT, 10) || 5000,
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv,
   allowedOrigins: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
-    : ['http://localhost:3000'],
+    : [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001',
+      ],
   jwtAccessSecret: process.env.JWT_ACCESS_SECRET,
-  jwtAccessExpire: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
+  jwtAccessExpire: process.env.JWT_ACCESS_EXPIRES_IN || '7d',
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
   jwtRefreshExpire: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
   mongoUri: process.env.MONGO_URI,
@@ -41,6 +48,39 @@ const config = {
     fromEmail: process.env.MAIL_FROM_EMAIL,
     supportEmail: process.env.MAIL_FROM_EMAIL || 'support@hackverse.local',
   },
+  cloudinary: {
+    url: process.env.CLOUDINARY_URL || process.env.CLOUDINARY_API,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_NAME,
+    apiKey: process.env.CLOUDINARY_API_KEY || process.env.CLOUDINARY_API,
+    apiSecret: process.env.CLOUDINARY_API_SECRET || process.env.CLOUDINARY_SECRET,
+    folder: process.env.CLOUDINARY_FOLDER || 'hackverse',
+  },
+  upstash: {
+    restUrl: process.env.UPSTASH_REDIS_REST_URL,
+    restToken: process.env.UPSTASH_REDIS_REST_TOKEN,
+  },
+  otp: {
+    ttlSeconds: parseInt(process.env.OTP_TTL_SECONDS, 10) || 180,
+    resendCooldownSeconds: parseInt(process.env.OTP_RESEND_COOLDOWN_SECONDS, 10) || 180,
+    maxAttempts: parseInt(process.env.OTP_MAX_ATTEMPTS, 10) || 5,
+  },
 };
+
+if (nodeEnv === 'production') {
+  const placeholderPattern = /change_me|your[-_]?secret|example/i;
+  if (
+    placeholderPattern.test(config.jwtAccessSecret) ||
+    placeholderPattern.test(config.jwtRefreshSecret)
+  ) {
+    console.warn(
+      '[env] JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be strong random values in production.'
+    );
+  }
+  if (!process.env.ALLOWED_ORIGINS) {
+    console.warn(
+      '[env] ALLOWED_ORIGINS is unset — CORS allows all origins. Set your frontend URL(s).'
+    );
+  }
+}
 
 export default config;

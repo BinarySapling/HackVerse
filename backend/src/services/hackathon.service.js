@@ -2,6 +2,7 @@ import hackathonRepository from '../repositories/hackathon.repository.js';
 import AppError from '../errors/AppError.js';
 import HttpStatus from '../constants/httpStatus.js';
 import ErrorCodes from '../errors/ErrorCodes.js';
+import HackathonStatus from '../constants/hackathonStatus.js';
 import logger from '../config/logger.js';
 import User from '../models/User.js';
 import Roles from '../constants/roles.js';
@@ -100,6 +101,59 @@ const resolveJudgeEmails = async (judgeEmails = []) => {
   return judges;
 };
 
+const assertHackathonAccess = (hackathon, userId, userRole) => {
+  const ownsHackathon = isOwner(hackathon.organizer, userId);
+  const hasAdminBypass = isAdmin(userRole);
+  if (!ownsHackathon && !hasAdminBypass) {
+    throw new AppError(
+      'Access denied: You do not own this hackathon',
+      HttpStatus.FORBIDDEN,
+      ErrorCodes.FORBIDDEN
+    );
+  }
+};
+
+export const resolveStatusFromDates = (hackathon, now = new Date()) => {
+  const status = hackathon.status;
+  if (status === HackathonStatus.DRAFT || status === HackathonStatus.ARCHIVED) {
+    return status;
+  }
+
+  const hackEnd = new Date(hackathon.hackathonEnd);
+  const hackStart = new Date(hackathon.hackathonStart);
+  const regEnd = new Date(hackathon.registrationEnd);
+
+  if (now >= hackEnd) {
+    return hackathon.evaluationClosed ? HackathonStatus.COMPLETED : HackathonStatus.JUDGING;
+  }
+  if (now >= hackStart) {
+    return HackathonStatus.ONGOING;
+  }
+  if (now > regEnd && status === HackathonStatus.REGISTRATION_OPEN) {
+    return HackathonStatus.ONGOING;
+  }
+
+  return status;
+};
+
+const refreshHackathonStatus = async (hackathon) => {
+  if (!hackathon || hackathon.isDeleted) {
+    return hackathon;
+  }
+
+  const nextStatus = resolveStatusFromDates(hackathon);
+  if (nextStatus === hackathon.status) {
+    return hackathon;
+  }
+
+  await hackathonRepository.update(hackathon._id, { status: nextStatus });
+  hackathon.status = nextStatus;
+  logger.info(
+    `Hackathon status auto-advanced: "${hackathon.title}" [ID: ${hackathon._id}] -> ${nextStatus}`
+  );
+  return hackathon;
+};
+
 export const createHackathon = async (organizerId, payload) => {
   const {
     title,
@@ -177,6 +231,12 @@ export const getHackathons = async (query) => {
       { tagline: { $regex: searchRegex } }
     ];
   }
+  if (query.mode) {
+    filter.mode = query.mode;
+  }
+  if (query.theme) {
+    filter.theme = { $regex: new RegExp(query.theme.trim(), 'i') };
+  }
 
   // Sort mappings
   let sort = { createdAt: -1 }; // Default: newest first
@@ -187,10 +247,11 @@ export const getHackathons = async (query) => {
   }
 
   const hackathons = await hackathonRepository.findAll(filter, sort, skip, limit);
+  const refreshedHackathons = await Promise.all(hackathons.map((h) => refreshHackathonStatus(h)));
   const total = await hackathonRepository.count(filter);
 
   return {
-    hackathons,
+    hackathons: refreshedHackathons,
     pagination: {
       total,
       page,
@@ -205,7 +266,7 @@ export const getHackathonBySlug = async (slug) => {
   if (!hackathon) {
     throw new AppError("Hackathon not found", HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND);
   }
-  return hackathon;
+  return refreshHackathonStatus(hackathon);
 };
 
 export const updateHackathon = async (hackathonId, userId, userRole, updatePayload) => {
@@ -223,6 +284,14 @@ export const updateHackathon = async (hackathonId, userId, userRole, updatePaylo
     throw new AppError("Access denied: You do not own this hackathon", HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN);
   }
 
+  if (['completed', 'archived'].includes(hackathon.status)) {
+    throw new AppError(
+      'Completed hackathons cannot be edited',
+      HttpStatus.FORBIDDEN,
+      ErrorCodes.FORBIDDEN
+    );
+  }
+
   // 3. Validate timelines if either is updated
   const regStart = updatePayload.registrationStart || hackathon.registrationStart;
   const regEnd = updatePayload.registrationEnd || hackathon.registrationEnd;
@@ -238,7 +307,6 @@ export const updateHackathon = async (hackathonId, userId, userRole, updatePaylo
   // 5. Filter out immutable columns to prevent overrides
   const { organizer, slug, isDeleted, ...cleanPayload } = updatePayload;
 
-  // 6. Update database record
   const updatedHackathon = await hackathonRepository.update(hackathonId, cleanPayload);
 
   logger.info(`Hackathon Updated: "${updatedHackathon.title}" [ID: ${updatedHackathon._id}] [User: ${userId}]`);
@@ -291,11 +359,60 @@ export const publishHackathon = async (hackathonId, userId, userRole) => {
   return updated;
 };
 
+export const openRegistration = async (hackathonId, userId, userRole) => {
+  const hackathon = await hackathonRepository.findById(hackathonId);
+  if (!hackathon || hackathon.isDeleted) {
+    throw new AppError('Hackathon not found', HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND);
+  }
+
+  assertHackathonAccess(hackathon, userId, userRole);
+
+  if ([HackathonStatus.DRAFT, HackathonStatus.ARCHIVED, HackathonStatus.COMPLETED].includes(hackathon.status)) {
+    throw new AppError(
+      'Registration cannot be opened for this hackathon',
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
+  const updated = await hackathonRepository.update(hackathonId, {
+    status: HackathonStatus.REGISTRATION_OPEN,
+  });
+  logger.info(`Registration opened: "${updated.title}" [ID: ${hackathonId}]`);
+  return updated;
+};
+
+export const closeRegistration = async (hackathonId, userId, userRole) => {
+  const hackathon = await hackathonRepository.findById(hackathonId);
+  if (!hackathon || hackathon.isDeleted) {
+    throw new AppError('Hackathon not found', HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND);
+  }
+
+  assertHackathonAccess(hackathon, userId, userRole);
+
+  if (hackathon.status !== HackathonStatus.REGISTRATION_OPEN) {
+    throw new AppError(
+      'Registration is not currently open',
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
+  const updated = await hackathonRepository.update(hackathonId, {
+    status: HackathonStatus.PUBLISHED,
+  });
+  logger.info(`Registration closed: "${updated.title}" [ID: ${hackathonId}]`);
+  return updated;
+};
+
 export default {
   createHackathon,
   getHackathons,
   getHackathonBySlug,
   updateHackathon,
   deleteHackathon,
-  publishHackathon
+  publishHackathon,
+  openRegistration,
+  closeRegistration,
+  resolveStatusFromDates,
 };

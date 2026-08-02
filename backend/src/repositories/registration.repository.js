@@ -25,12 +25,22 @@ export const countMyRegistrations = async (userId) => {
 
 export const findById = async (id) => {
   return Registration.findById(id)
-    .populate('hackathon')
+    .populate({
+      path: 'hackathon',
+      populate: { path: 'organizer', select: 'firstName lastName email' },
+    })
     .populate('user', 'firstName lastName email');
 };
 
+export const findByHackathon = async (hackathonId) => {
+  return Registration.find({ hackathon: hackathonId, isDeleted: false })
+    .populate('user', 'firstName lastName email')
+    .sort({ createdAt: -1 });
+};
+
 export const updateStatus = async (id, status) => {
-  return Registration.findByIdAndUpdate(id, { status }, { returnDocument: 'after' });
+  return Registration.findByIdAndUpdate(id, { status }, { returnDocument: 'after' })
+    .populate('user', 'firstName lastName email');
 };
 
 export default {
@@ -39,5 +49,6 @@ export default {
   findMyRegistrations,
   countMyRegistrations,
   findById,
+  findByHackathon,
   updateStatus
 };

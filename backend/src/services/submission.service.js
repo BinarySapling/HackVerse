@@ -1,6 +1,7 @@
 import submissionRepository from '../repositories/submission.repository.js';
 import teamRepository from '../repositories/team.repository.js';
 import hackathonRepository from '../repositories/hackathon.repository.js';
+import registrationRepository from '../repositories/registration.repository.js';
 import AppError from '../errors/AppError.js';
 import HttpStatus from '../constants/httpStatus.js';
 import ErrorCodes from '../errors/ErrorCodes.js';
@@ -10,6 +11,7 @@ import { assertOrganizerOwnsHackathonOrAdmin, isAdmin } from '../utils/authoriza
 import notificationService from './notification.service.js';
 import emailService from './email.service.js';
 import User from '../models/User.js';
+import { applyUploadedFiles, removeSubmissionFile } from '../utils/submissionFiles.js';
 
 const getSubmissionWindow = (hackathon) => {
   const start = new Date(hackathon.submissionStart || hackathon.hackathonStart);
@@ -37,7 +39,30 @@ const assertSubmissionWindowOpen = (hackathon) => {
   }
 };
 
-export const createSubmission = async (userId, hackathonId, payload) => {
+const assertTeamReadyForSubmission = async (team, hackathon) => {
+  if (team.members.length < hackathon.minTeamSize) {
+    throw new AppError(
+      `Team must have at least ${hackathon.minTeamSize} member(s) to submit`,
+      HttpStatus.BAD_REQUEST,
+      ErrorCodes.VALIDATION_ERROR
+    );
+  }
+
+  const hackathonId = hackathon._id || hackathon;
+  for (const member of team.members) {
+    const memberId = member._id || member;
+    const registration = await registrationRepository.findByUserAndHackathon(memberId, hackathonId);
+    if (!registration || registration.status !== 'registered') {
+      throw new AppError(
+        'All team members must have approved registrations before submitting',
+        HttpStatus.FORBIDDEN,
+        ErrorCodes.FORBIDDEN
+      );
+    }
+  }
+};
+
+export const createSubmission = async (userId, hackathonId, payload, files) => {
   const team = await teamRepository.findByLeader(userId, hackathonId);
   if (!team) {
     logger.warn(`Unauthorized submission attempt: User "${userId}" is not a team leader in hackathon "${hackathonId}"`);
@@ -54,13 +79,21 @@ export const createSubmission = async (userId, hackathonId, payload) => {
   }
 
   assertSubmissionWindowOpen(hackathon);
+  await assertTeamReadyForSubmission(team, hackathon);
 
+  const submissionPayload = applyUploadedFiles(payload, files);
   const existingSubmission = await submissionRepository.findByTeam(team._id);
   const now = new Date();
 
   let submission;
   if (existingSubmission) {
-    const { team: t, hackathon: h, isDeleted, ...cleanPayload } = payload;
+    const { team: t, hackathon: h, isDeleted, ...cleanPayload } = submissionPayload;
+    if (files?.screenshot?.[0] && existingSubmission.screenshotUrl) {
+      removeSubmissionFile(existingSubmission.screenshotUrl);
+    }
+    if (files?.presentation?.[0] && existingSubmission.presentationUrl) {
+      removeSubmissionFile(existingSubmission.presentationUrl);
+    }
     submission = await submissionRepository.update(existingSubmission._id, {
       ...cleanPayload,
       submittedAt: now
@@ -68,7 +101,7 @@ export const createSubmission = async (userId, hackathonId, payload) => {
     logger.info(`Submission Updated (resubmit) [ID: ${submission._id}] [Team: ${team._id}] [Leader: ${userId}]`);
   } else {
     submission = await submissionRepository.create({
-      ...payload,
+      ...submissionPayload,
       team: team._id,
       hackathon: hackathonId,
       submittedAt: now
@@ -124,7 +157,7 @@ export const getMySubmission = async (userId, hackathonId) => {
   return submission;
 };
 
-export const updateSubmission = async (submissionId, userId, payload) => {
+export const updateSubmission = async (submissionId, userId, payload, files) => {
   const submission = await submissionRepository.findById(submissionId);
   if (!submission || submission.isDeleted) {
     throw new AppError('Submission not found', HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND);
@@ -144,7 +177,16 @@ export const updateSubmission = async (submissionId, userId, payload) => {
   const hackathon = await hackathonRepository.findById(submission.hackathon._id || submission.hackathon);
   assertSubmissionWindowOpen(hackathon);
 
-  const { team: t, hackathon: h, isDeleted, ...cleanPayload } = payload;
+  const submissionPayload = applyUploadedFiles(payload, files);
+  const { team: t, hackathon: h, isDeleted, ...cleanPayload } = submissionPayload;
+
+  if (files?.screenshot?.[0] && submission.screenshotUrl) {
+    removeSubmissionFile(submission.screenshotUrl);
+  }
+  if (files?.presentation?.[0] && submission.presentationUrl) {
+    removeSubmissionFile(submission.presentationUrl);
+  }
+
   const updatedSubmission = await submissionRepository.update(submissionId, {
     ...cleanPayload,
     submittedAt: new Date()
@@ -226,6 +268,25 @@ export const getOrganizerSubmissions = async (hackathonId, userId, userRole, que
   };
 };
 
+export const reviewSubmission = async (submissionId, userId, userRole, status) => {
+  const submission = await submissionRepository.findById(submissionId);
+  if (!submission || submission.isDeleted) {
+    throw new AppError('Submission not found', HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND);
+  }
+
+  const hackathon = submission.hackathon;
+  assertOrganizerOwnsHackathonOrAdmin(
+    hackathon,
+    userId,
+    userRole,
+    'Access denied: Only the hackathon organizer or an admin can review submissions'
+  );
+
+  const updated = await submissionRepository.update(submissionId, { status });
+  logger.info(`Submission ${submissionId} marked as ${status} by ${userId}`);
+  return updated;
+};
+
 export const getJudgeSubmissions = async (hackathonId, judgeId, query) => {
   const hackathon = await hackathonRepository.findById(hackathonId);
   if (!hackathon || hackathon.isDeleted) {
@@ -266,5 +327,6 @@ export default {
   updateSubmission,
   deleteSubmission,
   getOrganizerSubmissions,
+  reviewSubmission,
   getJudgeSubmissions
 };

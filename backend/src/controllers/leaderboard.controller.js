@@ -5,7 +5,7 @@ import HttpStatus from '../constants/httpStatus.js';
 
 export const getLeaderboard = asyncHandler(async (req, res) => {
   const { hackathonId } = req.params;
-  const userId = req.user.id;
+  const userId = req.user?.id || null;
 
   const result = await leaderboardService.getLeaderboard(userId, hackathonId, req.query);
 
