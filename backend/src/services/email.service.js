@@ -21,36 +21,99 @@ const logEmail = ({ type, to, status, reason }) => {
 };
 
 export const sendEmail = async ({
-  type = 'generic',
+  type = "generic",
   to,
   subject,
   html,
-  text
+  text,
 }) => {
   if (!to) {
-    logEmail({ type, to, status: 'skipped', reason: 'Missing recipient' });
-    return { skipped: true, reason: 'Missing recipient' };
+    logEmail({
+      type,
+      to,
+      status: "skipped",
+      reason: "Missing recipient",
+    });
+    return { skipped: true, reason: "Missing recipient" };
   }
 
   if (!isMailConfigured() || !transporter) {
-    logEmail({ type, to, status: 'skipped', reason: 'SMTP configuration incomplete' });
-    return { skipped: true, reason: 'SMTP configuration incomplete' };
+    logEmail({
+      type,
+      to,
+      status: "skipped",
+      reason: "SMTP configuration incomplete",
+    });
+
+    return {
+      skipped: true,
+      reason: "SMTP configuration incomplete",
+    };
   }
 
   try {
+    // Verify SMTP Connection
+    await transporter.verify();
+    logger.info("SMTP VERIFIED SUCCESSFULLY");
+
+    // Send Mail
     const info = await transporter.sendMail({
       from: `"${config.mail.fromName}" <${config.mail.fromEmail}>`,
       to,
       subject,
       html,
-      text
+      text,
     });
 
-    logEmail({ type, to, status: 'sent' });
+    // Detailed SMTP Response
+    logger.info("SMTP RESPONSE", {
+      accepted: info.accepted,
+      rejected: info.rejected,
+      response: info.response,
+      envelope: info.envelope,
+      messageId: info.messageId,
+    });
+
+    // If recipient rejected
+    if (info.rejected && info.rejected.length > 0) {
+      logger.error("SMTP REJECTED RECIPIENTS", {
+        rejected: info.rejected,
+      });
+
+      return {
+        failed: true,
+        reason: `Recipients rejected: ${info.rejected.join(", ")}`,
+      };
+    }
+
+    logEmail({
+      type,
+      to,
+      status: "sent",
+    });
+
     return info;
   } catch (error) {
-    logEmail({ type, to, status: 'failed', reason: error.message });
-    return { failed: true, reason: error.message };
+    logger.error("SMTP ERROR", {
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+      responseCode: error.responseCode,
+      stack: error.stack,
+    });
+
+    logEmail({
+      type,
+      to,
+      status: "failed",
+      reason: error.message,
+    });
+
+    return {
+      failed: true,
+      reason: error.message,
+    };
   }
 };
 
