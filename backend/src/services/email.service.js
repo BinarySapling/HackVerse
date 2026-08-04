@@ -52,9 +52,21 @@ export const sendEmail = async ({
   }
 
   try {
-    // Verify SMTP Connection
+    // SMTP Verify
     await transporter.verify();
-    logger.info("SMTP VERIFIED SUCCESSFULLY");
+
+    logger.info("SMTP VERIFIED SUCCESSFULLY", {
+      type,
+      subject,
+      to,
+    });
+
+    // Before sending
+    logger.info("EMAIL START", {
+      type,
+      subject,
+      to,
+    });
 
     // Send Mail
     const info = await transporter.sendMail({
@@ -65,8 +77,11 @@ export const sendEmail = async ({
       text,
     });
 
-    // Detailed SMTP Response
+    // SMTP Response
     logger.info("SMTP RESPONSE", {
+      type,
+      subject,
+      to,
       accepted: info.accepted,
       rejected: info.rejected,
       response: info.response,
@@ -74,9 +89,10 @@ export const sendEmail = async ({
       messageId: info.messageId,
     });
 
-    // If recipient rejected
     if (info.rejected && info.rejected.length > 0) {
       logger.error("SMTP REJECTED RECIPIENTS", {
+        type,
+        subject,
         rejected: info.rejected,
       });
 
@@ -95,6 +111,9 @@ export const sendEmail = async ({
     return info;
   } catch (error) {
     logger.error("SMTP ERROR", {
+      type,
+      subject,
+      to,
       message: error.message,
       code: error.code,
       command: error.command,
